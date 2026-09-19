@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-coding-harness.dev/contracts/meta/contract_meta.schema.json",
+  "x-contract-name": "ContractMetadata",
+  "x-contract-version": 1,
+  "$comment": "Extension point: this meta-schema intentionally does not set additionalProperties:false on the object it describes, because it validates other normative JSON Schema documents, which legitimately carry arbitrary JSON Schema keywords beyond the four required contract-metadata fields.",
+  "title": "Required contract schema metadata",
+  "description": "Every normative JSON Schema document under contracts/ MUST satisfy this shape (Build and Contract Representation Closure, 10.2.2).",
+  "type": "object",
+  "required": ["$schema", "$id", "x-contract-name", "x-contract-version"],
+  "properties": {
+    "$schema": {
+      "const": "https://json-schema.org/draft/2020-12/schema"
+    },
+    "$id": {
+      "type": "string",
+      "format": "uri"
+    },
+    "x-contract-name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "x-contract-version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "additionalProperties": {
+      "description": "Present and false on every normative schema unless an extension point is explicitly documented via $comment."
+    }
+  }
+}

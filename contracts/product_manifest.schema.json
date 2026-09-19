@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-coding-harness.dev/contracts/product_manifest.schema.json",
+  "x-contract-name": "ProductManifest",
+  "x-contract-version": 1,
+  "title": "ProductManifest v1",
+  "description": "Canonical product identity, support matrix, dependency policy, and compatibility policy (Unified Implementation Blueprint 9.4, 10.2.1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "x-contract-name",
+    "x-contract-version",
+    "product_name",
+    "distribution_name",
+    "python_import_root",
+    "cli_name",
+    "contract_version",
+    "python",
+    "git",
+    "platforms",
+    "build",
+    "dependency_policy",
+    "compatibility_policy"
+  ],
+  "properties": {
+    "$schema": {
+      "const": "https://agentic-coding-harness.dev/contracts/product_manifest.schema.json"
+    },
+    "x-contract-name": { "const": "ProductManifest" },
+    "x-contract-version": { "type": "integer", "minimum": 1 },
+    "product_name": { "type": "string", "minLength": 1 },
+    "distribution_name": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "python_import_root": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "cli_name": { "type": "string", "minLength": 1 },
+    "contract_version": { "type": "integer", "minimum": 1 },
+    "python": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["specifier", "min_inclusive", "max_exclusive"],
+      "properties": {
+        "specifier": { "type": "string", "minLength": 1 },
+        "min_inclusive": { "type": "string", "minLength": 1 },
+        "max_exclusive": { "type": "string", "minLength": 1 }
+      }
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "minimum_version_research_id"],
+      "properties": {
+        "source": { "const": "system" },
+        "minimum_version_research_id": { "type": "string", "minLength": 1 }
+      }
+    },
+    "platforms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "conditional"],
+      "properties": {
+        "required": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["linux-x86_64", "windows-x86_64", "macos-arm64", "macos-x86_64"] }
+        },
+        "conditional": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["linux-x86_64", "windows-x86_64", "macos-arm64", "macos-x86_64"] }
+        }
+      }
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "build_backend",
+        "project_metadata_source",
+        "version_source",
+        "lock_manager",
+        "canonical_lockfile",
+        "editable_install",
+        "build_command",
+        "unit_test_command"
+      ],
+      "properties": {
+        "build_backend": { "const": "hatchling" },
+        "project_metadata_source": { "const": "pyproject.toml" },
+        "version_source": { "const": "agentic_harness.__about__.__version__" },
+        "lock_manager": { "const": "uv" },
+        "canonical_lockfile": { "const": "uv.lock" },
+        "editable_install": { "const": "uv sync" },
+        "build_command": { "const": "uv build" },
+        "unit_test_command": { "const": "uv run pytest" }
+      }
+    },
+    "dependency_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bounded_ranges_required", "lockfile_committed", "optional_integrations_are_extras", "import_side_effect_free"],
+      "properties": {
+        "bounded_ranges_required": { "const": true },
+        "lockfile_committed": { "const": true },
+        "optional_integrations_are_extras": { "const": true },
+        "import_side_effect_free": { "const": true }
+      }
+    },
+    "compatibility_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["change_classes"],
+      "properties": {
+        "change_classes": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "type": "string", "enum": ["PATCH", "MINOR", "MAJOR"] }
+        }
+      }
+    }
+  }
+}

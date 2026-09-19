@@ -1,0 +1,9 @@
+path,title,url,host,depth,status
+docs/developers-openai-com-api-docs-b74297ab.md,OpenAI API docs,https://developers.openai.com/api/docs,developers.openai.com,0,packaged
+docs/developers-openai-com-api-docs-guides-reasoning-f1a3dade.md,Reasoning models,https://developers.openai.com/api/docs/guides/reasoning,developers.openai.com,0,packaged
+docs/developers-openai-com-api-docs-guides-conversation-state-e53452f5.md,Conversation state,https://developers.openai.com/api/docs/guides/conversation-state,developers.openai.com,0,packaged
+docs/developers-openai-com-api-docs-guides-migrate-to-responses-b21e0382.md,Migrate to the Responses API,https://developers.openai.com/api/docs/guides/migrate-to-responses,developers.openai.com,0,packaged
+docs/developers-openai-com-api-docs-guides-streaming-responses-419e38c7.md,Streaming API responses,https://developers.openai.com/api/docs/guides/streaming-responses,developers.openai.com,0,packaged
+docs/developers-openai-com-api-docs-guides-function-calling-3ef71247.md,Function calling,https://developers.openai.com/api/docs/guides/function-calling,developers.openai.com,0,packaged
+docs/developers-openai-com-api-reference-resources-responses-33202098.md,Responses,https://developers.openai.com/api/reference/resources/responses,developers.openai.com,0,packaged
+docs/developers-openai-com-api-reference-resources-responses-methods-create-c99c4626.md,create,https://developers.openai.com/api/reference/resources/responses/methods/create,developers.openai.com,0,packaged

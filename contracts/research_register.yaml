@@ -1,0 +1,300 @@
+# ResearchRegister v1 (Unified Implementation Blueprint 10.18).
+# Owner: implementing agent, under the fail-closed rule in 9.18: absence of
+# a completed research decision means the capability is unsupported or
+# blocked. It is never permission to silently select a behavior.
+$schema: https://agentic-coding-harness.dev/contracts/research_register.schema.json
+x-contract-name: ResearchRegister
+x-contract-version: 1
+
+records:
+  - research_id: GIT_MIN_VERSION
+    capability: Minimum supported system Git version for repository/worktree identity.
+    question: >-
+      What is the lowest system Git version the harness can require while
+      guaranteeing the safe.directory ownership check (CVE-2022-24765) and
+      its Windows path-handling bypass fix (CVE-2022-29187) are present,
+      given the harness creates and operates worktrees on the caller's
+      behalf across trust boundaries?
+    authoritative_sources_allowed:
+      - https://github.blog/open-source/git/git-security-vulnerability-announced/
+      - https://github.com/git/git/security/advisories
+    resolved_value: "2.35.3"
+    source_refs:
+      - https://github.blog/open-source/git/git-security-vulnerability-announced/
+      - https://seclists.org/oss-sec/2022/q2/38
+    observed_versions:
+      - "2.30.3"
+      - "2.31.2"
+      - "2.32.1"
+      - "2.33.2"
+      - "2.34.2"
+      - "2.35.2"
+      - "2.35.3"
+    verified_at: "2026-09-19T00:00:00Z"
+    expires_at: null
+    recheck_trigger: A new Git CVE affecting worktree/config/ownership trust is disclosed, or the harness raises its security baseline.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: GIT_WORKTREE_BEHAVIOR
+    capability: git worktree add/move/remove/prune semantics across supported platforms.
+    question: Do worktree add/move/remove/prune behave identically enough across Linux/Windows/macOS system Git builds for Phase 1 transactional-workspace guarantees?
+    authoritative_sources_allowed:
+      - https://git-scm.com/docs/git-worktree
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 1 (Transactional Workspace) implementation start.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: GIT_SHA256_REPOSITORY_SUPPORT
+    capability: SHA-256 object-format repository support alongside SHA-1.
+    question: Can the harness safely support SHA-256 repositories, and if so under what doctor-provable capability detection, without inferring OID length globally?
+    authoritative_sources_allowed:
+      - https://git-scm.com/docs/hash-function-transition
+      - https://github.blog/open-source/git/
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: A doctor capability-detection test proves both SHA-1 and SHA-256 object formats on all required platforms.
+    failure_behavior: UNSUPPORTED
+
+  - research_id: GIT_SPARSE_CHECKOUT_BEHAVIOR
+    capability: git sparse-checkout cone-mode behavior for scoped worktrees.
+    question: Which sparse-checkout mode and Git version baseline are required for deterministic scoped worktree materialization?
+    authoritative_sources_allowed:
+      - https://git-scm.com/docs/git-sparse-checkout
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 1 (Transactional Workspace) implementation start.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: WINDOWS_GIT_FILEMODE_CASE_BEHAVIOR
+    capability: Windows Git core.filemode/core.ignoreCase interaction with repository identity.
+    question: How do core.filemode and core.ignoreCase defaults on Windows affect tracked-worktree digesting and cross-platform repository identity equivalence?
+    authoritative_sources_allowed:
+      - https://git-scm.com/docs/git-config
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 1 repository-identity golden fixture work on Windows.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: PYTHON_SUPPORTED_SQLITE_MATRIX
+    capability: stdlib sqlite3/SQLite version matrix across CPython 3.13/3.14 on required platforms.
+    question: Which SQLite library versions ship with CPython 3.13/3.14 on Linux/Windows/macOS, and do they support WAL mode and the pragmas the persistence design requires?
+    authoritative_sources_allowed:
+      - https://docs.python.org/3/library/sqlite3.html
+      - https://sqlite.org/changes.html
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 8 (Durable Persistence) implementation start.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: FILESYSTEM_ATOMIC_REPLACE_AND_FSYNC
+    capability: Atomic file replace and durable fsync semantics across required platforms.
+    question: What atomic-replace and fsync/fdatasync guarantees does each required platform provide for artifact-store and persistence durability?
+    authoritative_sources_allowed:
+      - https://docs.python.org/3/library/os.html#os.replace
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 1 content-addressed artifact store implementation start.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: POSIX_PROCESS_GROUP_TERMINATION
+    capability: POSIX process-group termination semantics for tool/process execution.
+    question: What signal/process-group behavior reliably terminates a tool subprocess tree on required POSIX platforms?
+    authoritative_sources_allowed:
+      - https://man7.org/linux/man-pages/man2/kill.2.html
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 2 process-execution tool implementation start.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: WINDOWS_JOB_OBJECT_TERMINATION
+    capability: Windows Job Object termination semantics for tool/process execution.
+    question: What Job Object configuration reliably terminates a tool subprocess tree on Windows?
+    authoritative_sources_allowed:
+      - https://learn.microsoft.com/windows/win32/procthread/job-objects
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 2 process-execution tool implementation start.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: DOCKER_PODMAN_ISOLATION
+    capability: Docker/Podman sandbox backend isolation behavior.
+    question: What isolation guarantees (rootless mode, non-root user, resource limits, network defaults) do supported Docker/Podman versions actually provide?
+    authoritative_sources_allowed:
+      - https://docs.docker.com/
+      - https://docs.podman.io/
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 3 (Sandbox and Environment Planning) research gate.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: SCOPED_NETWORK_ENFORCEMENT
+    capability: Scoped-network enforcement backend for sandboxed execution.
+    question: Which backend can enforce a per-run allow-listed network scope with fail-closed default-deny across required platforms?
+    authoritative_sources_allowed:
+      - https://docs.docker.com/network/
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 3 (Sandbox and Environment Planning) research gate.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: OPENAI_ADAPTER_SEMANTICS
+    capability: Current OpenAI request/stream/tool/continuation-state semantics.
+    question: What are the current request, streaming, tool-call, and continuation-state semantics of the OpenAI API the provider adapter must implement?
+    authoritative_sources_allowed:
+      - https://platform.openai.com/docs
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 4 (Provider Gateway) research gate.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: ANTHROPIC_ADAPTER_SEMANTICS
+    capability: Current Anthropic request/stream/tool/continuation-state semantics.
+    question: What are the current request, streaming, tool-call, and continuation-state semantics of the Anthropic API the provider adapter must implement?
+    authoritative_sources_allowed:
+      - https://docs.anthropic.com/
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 4 (Provider Gateway) research gate.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: OPENROUTER_ADAPTER_SEMANTICS
+    capability: Current OpenRouter request/stream/tool/continuation-state semantics.
+    question: What are the current request, streaming, tool-call, and continuation-state semantics of the OpenRouter API the provider adapter must implement?
+    authoritative_sources_allowed:
+      - https://openrouter.ai/docs
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 4 (Provider Gateway) research gate.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: TOKEN_COUNTING_APIS
+    capability: Provider-specific token-counting/pricing APIs and tokenizer availability.
+    question: Which provider-native or local tokenizer facilities give accurate pre-call token counts for context-budget enforcement?
+    authoritative_sources_allowed:
+      - https://platform.openai.com/docs
+      - https://docs.anthropic.com/
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 4/5 token-budget implementation start.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: TREESITTER_SUPPORT_MATRIX
+    capability: Tree-sitter language grammar support matrix for structural retrieval.
+    question: Which languages/grammars does the chosen Tree-sitter Python binding support, and at what version stability?
+    authoritative_sources_allowed:
+      - https://tree-sitter.github.io/tree-sitter/
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 5 (Repository Intelligence) research gate.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: LOCK_OWNERSHIP_STALENESS
+    capability: OS-specific proof of stale lock ownership for persistence/writer locking.
+    question: What platform-specific mechanism can prove a persistence writer lock is stale (holder process no longer exists) rather than merely old?
+    authoritative_sources_allowed:
+      - https://docs.python.org/3/library/os.html
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 8 (Durable Persistence) research gate.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: MCP_PROTOCOL_SDK
+    capability: Current Model Context Protocol transport/negotiation/SDK behavior.
+    question: What are the current supported MCP transports, protocol negotiation, and Python SDK guarantees relevant to policy-mediated tool execution?
+    authoritative_sources_allowed:
+      - https://modelcontextprotocol.io/
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 11 (MCP) research gate.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: OTEL_PYTHON_EXPORTER
+    capability: OpenTelemetry Python exporter behavior for harness telemetry.
+    question: What are the current OpenTelemetry Python SDK/exporter guarantees and redaction hook points relevant to telemetry egress?
+    authoritative_sources_allowed:
+      - https://opentelemetry.io/docs/languages/python/
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: First telemetry-exporting phase implementation start.
+    failure_behavior: DEGRADED_DECLARED
+
+  - research_id: GITHUB_ACTIONS_TRUST_TOKEN
+    capability: GitHub Actions event/token/permission trust semantics for CI integration.
+    question: What are the current GitHub Actions event-trigger trust boundaries, GITHUB_TOKEN permission scoping, and fork-PR secret exposure rules?
+    authoritative_sources_allowed:
+      - https://docs.github.com/actions
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: Phase 13 (CI) research gate.
+    failure_behavior: BLOCKED_CAPABILITY
+
+  - research_id: PACKAGE_INDEX_NAME_AVAILABILITY
+    capability: PyPI distribution name availability for `agentic-coding-harness`.
+    question: Is the `agentic-coding-harness` distribution name available on PyPI at publication time?
+    authoritative_sources_allowed:
+      - https://pypi.org/
+    resolved_value: null
+    source_refs: []
+    observed_versions: []
+    verified_at: null
+    expires_at: null
+    recheck_trigger: First release-publication attempt.
+    failure_behavior: BLOCKED_CAPABILITY

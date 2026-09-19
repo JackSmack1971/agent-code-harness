@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-coding-harness.dev/contracts/research_register.schema.json",
+  "x-contract-name": "ResearchRegister",
+  "x-contract-version": 1,
+  "title": "ResearchRegister v1",
+  "description": "Distinguishes legitimate implementation-time research from missing architecture (Platform/External Research Register v1, 10.18).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "x-contract-name", "x-contract-version", "records"],
+  "properties": {
+    "$schema": {
+      "const": "https://agentic-coding-harness.dev/contracts/research_register.schema.json"
+    },
+    "x-contract-name": { "const": "ResearchRegister" },
+    "x-contract-version": { "type": "integer", "minimum": 1 },
+    "records": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/record" }
+    }
+  },
+  "$defs": {
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "research_id",
+        "capability",
+        "question",
+        "authoritative_sources_allowed",
+        "resolved_value",
+        "source_refs",
+        "observed_versions",
+        "verified_at",
+        "expires_at",
+        "recheck_trigger",
+        "failure_behavior"
+      ],
+      "properties": {
+        "research_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+        "capability": { "type": "string", "minLength": 1 },
+        "question": { "type": "string", "minLength": 1 },
+        "authoritative_sources_allowed": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "resolved_value": {
+          "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }]
+        },
+        "source_refs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "observed_versions": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "verified_at": {
+          "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }]
+        },
+        "expires_at": {
+          "anyOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }]
+        },
+        "recheck_trigger": { "type": "string", "minLength": 1 },
+        "failure_behavior": {
+          "type": "string",
+          "enum": ["BLOCKED_CAPABILITY", "UNSUPPORTED", "DEGRADED_DECLARED"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "resolved_value": { "type": "string" } },
+            "required": ["resolved_value"]
+          },
+          "then": {
+            "required": ["source_refs", "verified_at"],
+            "properties": {
+              "source_refs": { "minItems": 1 },
+              "verified_at": { "type": "string" }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

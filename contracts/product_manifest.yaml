@@ -1,0 +1,54 @@
+# ProductManifest v1 (Unified Implementation Blueprint 9.4, 10.2.1).
+# Owner: triage / repository foundation. Authoritative machine-readable
+# source for canonical product identity, support matrix, build tooling,
+# dependency policy, and compatibility policy.
+$schema: https://agentic-coding-harness.dev/contracts/product_manifest.schema.json
+x-contract-name: ProductManifest
+x-contract-version: 1
+
+product_name: Agentic Coding Harness
+distribution_name: agentic-coding-harness
+python_import_root: agentic_harness
+cli_name: harness
+contract_version: 1
+
+python:
+  specifier: ">=3.13,<3.15"
+  min_inclusive: "3.13"
+  max_exclusive: "3.15"
+
+git:
+  source: system
+  # Resolved value lives in research_register.yaml under this research_id so
+  # there is exactly one authoritative place the minimum version is recorded.
+  minimum_version_research_id: GIT_MIN_VERSION
+
+platforms:
+  required:
+    - linux-x86_64
+    - windows-x86_64
+  conditional:
+    - macos-arm64
+    - macos-x86_64
+
+build:
+  build_backend: hatchling
+  project_metadata_source: pyproject.toml
+  version_source: agentic_harness.__about__.__version__
+  lock_manager: uv
+  canonical_lockfile: uv.lock
+  editable_install: uv sync
+  build_command: uv build
+  unit_test_command: uv run pytest
+
+dependency_policy:
+  bounded_ranges_required: true
+  lockfile_committed: true
+  optional_integrations_are_extras: true
+  import_side_effect_free: true
+
+compatibility_policy:
+  change_classes:
+    - PATCH
+    - MINOR
+    - MAJOR

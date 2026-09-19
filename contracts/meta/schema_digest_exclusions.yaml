@@ -1,0 +1,15 @@
+# CanonicalSerialization v1 / Build and Contract Representation Closure (10.2.2).
+#
+# Non-semantic presentation fields removed from a JSON Schema document before
+# it is canonicalized and digested for schema identity. Indentation, key
+# insertion order, and these keywords do not affect schema identity; every
+# other keyword is semantic and participates in the digest.
+$schema: https://agentic-coding-harness.dev/contracts/meta/schema_digest_exclusions.schema.json
+x-contract-name: SchemaDigestExclusions
+x-contract-version: 1
+
+excluded_keywords:
+  - $comment
+  - title
+  - description
+  - examples

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import hashlib
+import json
 import signal
 import subprocess
 import tempfile
@@ -174,9 +175,26 @@ def registered_tool(name: str) -> ToolDefinition:
     return definition
 
 
+def _load_schema(reference: str) -> Any:
+    path_text, _, fragment = reference.partition("#")
+    path = _registry_path().parent / path_text
+    if not path.is_file():
+        raise ToolProtocolError(f"registered schema is unavailable: {reference}")
+    document = json.loads(path.read_text(encoding="utf-8"))
+    if fragment:
+        value: Any = document
+        for part in fragment.lstrip("/").split("/"):
+            value = value[part.replace("~1", "/").replace("~0", "~")]
+        return value
+    return document
+
+
 def tool_schema_digest(name: str) -> str:
     definition = registered_tool(name)
-    return digest_for(definition.model_dump(mode="json"))
+    return digest_for({
+        "request_schema": _load_schema(definition.request_schema_ref),
+        "result_schema": _load_schema(definition.result_schema_ref),
+    })
 
 
 def validate_request(request: ToolRequest) -> ToolDefinition:
@@ -236,31 +254,50 @@ def _redact(data: bytes, secret_values: tuple[bytes, ...]) -> bytes:
     return data
 
 
-def _output(data: bytes, *, limit: int, media_type: str = "text/plain; charset=utf-8") -> Output:
+def _output(data: bytes, *, limit: int, artifact_store: Path | None = None, media_type: str = "text/plain; charset=utf-8") -> Output:
     if len(data) <= limit:
         return InlineOutput(text=data.decode("utf-8", errors="replace"), byte_length=len(data), media_type=media_type)
     digest = content_digest(data)
     preview = data[:limit].decode("utf-8", errors="replace")
+    if artifact_store is not None:
+        artifact_store.mkdir(parents=True, exist_ok=True)
+        artifact_path = artifact_store / digest.removeprefix("sha256:")
+        if not artifact_path.exists():
+            fd, temporary = tempfile.mkstemp(prefix=".harness-artifact-", dir=str(artifact_store))
+            try:
+                with os.fdopen(fd, "wb") as handle:
+                    handle.write(data)
+                    handle.flush()
+                    os.fsync(handle.fileno())
+                os.replace(temporary, artifact_path)
+            finally:
+                if os.path.exists(temporary):
+                    os.unlink(temporary)
     return ArtifactOutput(digest=digest, byte_length=len(data), media_type=media_type, preview=preview)
 
 
-def execute_process(*, executable: str, argv: list[str], cwd: Path, env: dict[str, str], timeout_ms: int | None = None, stdin: bytes | None = None, output_limit: int = 65536, cancel: Callable[[], bool] | None = None, secret_values: tuple[str, ...] = ()) -> ToolResult:
+def execute_process(*, executable: str, argv: list[str], cwd: Path, env: dict[str, str], timeout_ms: int | None = None, stdin: bytes | None = None, output_limit: int = 65536, cancel: Callable[[], bool] | None = None, secret_values: tuple[str, ...] = (), artifact_store: Path | None = None) -> ToolResult:
     """Run exact argv with a controlled environment and no shell."""
     started = datetime.now(timezone.utc)
     proc: subprocess.Popen[bytes] | None = None
     try:
         proc = subprocess.Popen([executable, *argv], cwd=str(cwd), env=dict(env), stdin=subprocess.PIPE if stdin is not None else subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False, start_new_session=True)
+        if stdin is not None and proc.stdin is not None:
+            proc.stdin.write(stdin)
+            proc.stdin.close()
         deadline = None if timeout_ms is None else time.monotonic() + timeout_ms / 1000
-        while proc.poll() is None:
-            if cancel and cancel():
-                _terminate_process_tree(proc)
-                return _process_result(proc, ToolStatus.CANCELLED, started, output_limit, secret_values=secret_values, code="TOOL_CANCELLED")
-            if deadline is not None and time.monotonic() >= deadline:
-                _terminate_process_tree(proc)
-                return _process_result(proc, ToolStatus.TIMEOUT, started, output_limit, secret_values=secret_values, code="TOOL_TIMEOUT")
-            time.sleep(0.01)
-        stdout, stderr = proc.communicate(input=stdin)
-        return _process_result(proc, ToolStatus.SUCCESS if proc.returncode == 0 else ToolStatus.FAILURE, started, output_limit, stdout, stderr, secret_values=secret_values)
+        while True:
+            try:
+                stdout, stderr = proc.communicate(timeout=0.05)
+                break
+            except subprocess.TimeoutExpired:
+                if cancel and cancel():
+                    _terminate_process_tree(proc)
+                    return _process_result(proc, ToolStatus.CANCELLED, started, output_limit, secret_values=secret_values, artifact_store=artifact_store, code="TOOL_CANCELLED")
+                if deadline is not None and time.monotonic() >= deadline:
+                    _terminate_process_tree(proc)
+                    return _process_result(proc, ToolStatus.TIMEOUT, started, output_limit, secret_values=secret_values, artifact_store=artifact_store, code="TOOL_TIMEOUT")
+        return _process_result(proc, ToolStatus.SUCCESS if proc.returncode == 0 else ToolStatus.FAILURE, started, output_limit, stdout, stderr, secret_values=secret_values, artifact_store=artifact_store)
     except OSError as exc:
         return ToolResult(tool_call_id="process.run", status=ToolStatus.FAILURE, started_at=started, finished_at=datetime.now(timezone.utc), error=ToolError(code="TOOL_PROCESS_ERROR", category="PROCESS", message=str(exc), retryable=False, details={}))
 
@@ -276,19 +313,24 @@ def _terminate_process_tree(proc: subprocess.Popen[bytes]) -> None:
         proc.kill()
 
 
-def _process_result(proc: subprocess.Popen[bytes], status: ToolStatus, started: datetime, limit: int, stdout: bytes = b"", stderr: bytes = b"", *, secret_values: tuple[str, ...] = (), code: str | None = None) -> ToolResult:
+def _process_result(proc: subprocess.Popen[bytes], status: ToolStatus, started: datetime, limit: int, stdout: bytes = b"", stderr: bytes = b"", *, secret_values: tuple[str, ...] = (), artifact_store: Path | None = None, code: str | None = None) -> ToolResult:
     if proc.poll() is None:
         stdout, stderr = proc.communicate()
     error = None if status == ToolStatus.SUCCESS else ToolError(code=code or "TOOL_PROCESS_FAILED", category="PROCESS", message="process did not complete successfully", retryable=status == ToolStatus.TIMEOUT, details={})
     secrets = tuple(value.encode("utf-8") for value in secret_values)
-    return ToolResult(tool_call_id="process.run", status=status, started_at=started, finished_at=datetime.now(timezone.utc), exit_code=proc.returncode, stdout=_output(_redact(stdout, secrets), limit=limit), stderr=_output(_redact(stderr, secrets), limit=limit), error=error)
+    safe_stdout = _output(_redact(stdout, secrets), limit=limit, artifact_store=artifact_store)
+    safe_stderr = _output(_redact(stderr, secrets), limit=limit, artifact_store=artifact_store)
+    artifacts = [item.digest for item in (safe_stdout, safe_stderr) if isinstance(item, ArtifactOutput)]
+    return ToolResult(tool_call_id="process.run", status=status, started_at=started, finished_at=datetime.now(timezone.utc), exit_code=proc.returncode, stdout=safe_stdout, stderr=safe_stderr, artifacts=artifacts, error=error)
 
 
 def atomic_write(root: Path, relative_path: str, content: bytes, *, expected_preimage_digest: str | None = None) -> str:
     normalized = normalize_repo_path(relative_path, root=root)
-    target = (root / Path(normalized)).resolve(strict=False)
-    if target.exists() and target.is_symlink():
+    governed_root = root.resolve()
+    lexical_target = governed_root / Path(normalized)
+    if lexical_target.is_symlink() or not lexical_target.parent.resolve(strict=False).is_relative_to(governed_root):
         raise ToolProtocolError("TOOL_PATH_SYMLINK_ESCAPE")
+    target = lexical_target
     current = target.read_bytes() if target.exists() else None
     current_digest = content_digest(current) if current is not None else content_digest(b"")
     if expected_preimage_digest is not None and current_digest != expected_preimage_digest:
@@ -314,21 +356,37 @@ def content_digest(content: bytes) -> str:
 
 def apply_patch_set(root: Path, patch_set: PatchSet) -> tuple[str, ...]:
     """Validate every PatchSet operation before mutation and roll back on failure."""
-    plans: list[tuple[str, Path, Path | None, bytes | None, int | None]] = []
+    try:
+        from ._repository_identity import capture_repository_snapshot
+        current_snapshot = capture_repository_snapshot(root).digest
+    except Exception as exc:
+        if (root / ".git").exists():
+            raise ToolProtocolError("TOOL_CANDIDATE_SNAPSHOT_UNAVAILABLE") from exc
+        current_snapshot = None
+    if current_snapshot is not None and patch_set.base_snapshot != current_snapshot:
+        raise ToolProtocolError("TOOL_STALE_PRECONDITION")
+    plans: list[tuple[PatchOperation, str, Path, Path | None, bytes | None]] = []
     seen: set[str] = set()
+    ordered_names: list[str] = []
     for op in patch_set.operations:
         if op.operation not in {"CreateFile", "ModifyFile", "DeleteFile", "RenameFile", "SetExecutable"}:
             raise ToolProtocolError("TOOL_INVALID_PATCH_OPERATION")
         if op.path is None and op.operation != "RenameFile":
             raise ToolProtocolError("TOOL_INVALID_PATCH_OPERATION")
-        path = normalize_repo_path(op.path or op.from_path or "", root=root)
-        if path in seen:
+        if op.operation == "RenameFile" and (op.from_path is None or op.path is None):
+            raise ToolProtocolError("TOOL_INVALID_PATCH_OPERATION")
+        source_name = normalize_repo_path(op.from_path, root=root) if op.operation == "RenameFile" and op.from_path else normalize_repo_path(op.path or "", root=root)
+        destination_name = normalize_repo_path(op.path, root=root) if op.operation == "RenameFile" and op.path else None
+        names = [source_name] + ([destination_name] if destination_name is not None else [])
+        if len(set(names)) != len(names) or any(name in seen for name in names):
             raise ToolProtocolError("TOOL_PATCH_DUPLICATE_PATH")
-        seen.add(path)
-        target = (root / path).resolve(strict=False)
-        if target.exists() and target.is_symlink():
+        seen.update(names)
+        ordered_names.extend(names)
+        source = (root / source_name).resolve(strict=False)
+        destination = (root / destination_name).resolve(strict=False) if destination_name else None
+        if source.exists() and source.is_symlink() or destination is not None and destination.exists() and destination.is_symlink():
             raise ToolProtocolError("TOOL_PATH_SYMLINK_ESCAPE")
-        current = target.read_bytes() if target.exists() else None
+        current = source.read_bytes() if source.exists() else None
         if op.operation == "CreateFile" and current is not None:
             raise ToolProtocolError("TOOL_STALE_PRECONDITION")
         if op.operation in {"ModifyFile", "DeleteFile", "RenameFile"} and op.preimage_digest is None:
@@ -337,35 +395,45 @@ def apply_patch_set(root: Path, patch_set: PatchSet) -> tuple[str, ...]:
             raise ToolProtocolError("TOOL_STALE_PRECONDITION")
         if op.preimage_digest is not None and content_digest(current or b"") != op.preimage_digest:
             raise ToolProtocolError("TOOL_STALE_PRECONDITION")
+        if op.operation == "RenameFile" and destination is not None and destination.exists():
+            raise ToolProtocolError("TOOL_STALE_PRECONDITION")
         if op.operation in {"CreateFile", "ModifyFile"}:
             if op.content is None or (op.postimage_digest is not None and content_digest(op.content) != op.postimage_digest):
                 raise ToolProtocolError("TOOL_INVALID_PATCH_OPERATION")
-        plans.append((op.operation, target, None, op.content, op.new_mode))
+        if op.operation == "SetExecutable" and op.new_mode is None:
+            raise ToolProtocolError("TOOL_INVALID_PATCH_OPERATION")
+        if op.operation == "SetExecutable":
+            if op.expected_mode is None or current is None or source.stat().st_mode != op.expected_mode:
+                raise ToolProtocolError("TOOL_STALE_PRECONDITION")
+        plans.append((op, source_name, source, destination, op.content))
 
-    backups: dict[Path, bytes | None] = {target: (target.read_bytes() if target.exists() else None) for _, target, _, _, _ in plans}
+    touched = [path for _, _, source, destination, _ in plans for path in (source, destination) if path is not None]
+    backups: dict[Path, tuple[bytes | None, int | None]] = {path: ((path.read_bytes() if path.exists() else None), (path.stat().st_mode if path.exists() else None)) for path in touched}
     try:
-        for operation, target, _, content, mode in plans:
-            if operation in {"CreateFile", "ModifyFile"}:
-                target.parent.mkdir(parents=True, exist_ok=True)
-                atomic_write(root, target.relative_to(root).as_posix(), content or b"")
-            elif operation == "DeleteFile":
-                target.unlink()
-            elif operation == "SetExecutable":
-                if mode is None:
-                    raise ToolProtocolError("TOOL_INVALID_PATCH_OPERATION")
-                os.chmod(target, mode)
+        for op, _, source, destination, content in plans:
+            if op.operation in {"CreateFile", "ModifyFile"}:
+                atomic_write(root, source.relative_to(root).as_posix(), content or b"")
+            elif op.operation == "DeleteFile":
+                source.unlink()
+            elif op.operation == "SetExecutable":
+                os.chmod(source, op.new_mode or 0)
+            elif op.operation == "RenameFile" and destination is not None:
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                os.replace(source, destination)
             else:
-                raise ToolProtocolError("TOOL_PATCH_RENAME_UNSUPPORTED")
+                raise ToolProtocolError("TOOL_INVALID_PATCH_OPERATION")
     except Exception:
-        for target, original in backups.items():
+        for path, (original, mode) in backups.items():
             if original is None:
-                if target.exists():
-                    target.unlink()
+                if path.exists():
+                    path.unlink()
             else:
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(original)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(original)
+                if mode is not None:
+                    os.chmod(path, mode)
         raise
-    return tuple(path for path in seen)
+    return tuple(ordered_names)
 
 
 _GIT_NETWORK_COMMANDS = frozenset({"fetch", "pull", "push", "clone", "remote", "submodule"})
@@ -376,9 +444,17 @@ def build_git_argv(operation: str, args: list[str], *, repo_root: Path) -> list[
     """Build a fixed, hook/filter-sanitized Git argv; network is never exposed."""
     if operation in _GIT_NETWORK_COMMANDS or operation not in _GIT_COMMANDS:
         raise ToolProtocolError("TOOL_GIT_OPERATION_NOT_ALLOWED")
-    if any("\x00" in arg or arg in {"--upload-pack", "--config-env"} for arg in args):
+    if any("\x00" in arg or arg in {"-c", "--config", "--config-env", "--upload-pack", "--exec-path", "--git-dir", "--work-tree"} for arg in args):
         raise ToolProtocolError("TOOL_GIT_ARGUMENT_INVALID")
-    command = ["git", "-C", str(repo_root), "-c", "core.hooksPath=NUL", "-c", "core.fsmonitor=false", operation]
+    command = [
+        "git", "-C", str(repo_root),
+        "-c", "core.hooksPath=NUL",
+        "-c", "core.fsmonitor=false",
+        "-c", "filter.lfs.process=",
+        "-c", "filter.lfs.clean=",
+        "-c", "filter.lfs.smudge=",
+        operation,
+    ]
     if operation == "worktree":
         command.extend(["--no-guess"])
     command.extend(args)

@@ -1,0 +1,1 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","$id":"https://agentic-coding-harness.dev/contracts/tool_protocol/search.regex.request.json","x-contract-name":"ToolRequest.search.regex","x-contract-version":1,"type":"object","additionalProperties":false,"$ref":"common.schema.json#/$defs/request"}

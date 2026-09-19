@@ -149,20 +149,27 @@ def run(objective: str | None = typer.Argument(None), objective_file: Path | Non
         text_value = objective if objective is not None else objective_file.read_text(encoding="utf-8")
         if not text_value.strip():
             raise ValueError("objective must not be empty")
+        config_digest = None
+        if config is not None:
+            root = find_contracts_root()
+            if root is None:
+                raise ConfigError("contracts root not found")
+            effective = resolve_configuration_from_files(platform=sys.platform, repository_root=repo.resolve(), env=dict(os.environ), explicit_path=config, contracts_root=root)
+            config_digest = compute_config_digest(effective)
         run_id = uuid7_str()
         now = dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
         goal = _new_goal(text_value, now)
         validate_record("GoalContract", goal)
         run_record = {"schema_name": "RunRecord", "schema_version": 1, "run_id": run_id, "state": "CREATED", "run_version": 0,
             "goal_revision_id": goal["goal_revision_id"], "change_revision_id": None, "repository_snapshot_digest": None,
-            "candidate_snapshot_digest": None, "config_digest": None, "policy_digest": None, "resume_target_state": None,
+            "candidate_snapshot_digest": None, "config_digest": config_digest, "policy_digest": None, "resume_target_state": None,
             "created_at": now, "updated_at": now, "digest": "sha256:" + "0" * 64}
         run_record["digest"] = compute_identity_digest("RunRecord", run_record)
         store = _open_db(repo.resolve(), create=True); conn = store.conn
         conn.execute("BEGIN IMMEDIATE")
         conn.execute("INSERT INTO goals(goal_id,created_at) VALUES(?,?)", (goal["goal_id"], now))
         conn.execute("INSERT INTO goal_revisions(goal_revision_id,goal_id,parent_revision_id,canonical_json,digest,created_at) VALUES(?,?,?,?,?,?)", (goal["goal_revision_id"], goal["goal_id"], None, canonical_json_bytes(goal).decode(), goal["digest"], now))
-        conn.execute("INSERT INTO runs(run_id,state,run_version,goal_revision_id,change_revision_id,repository_snapshot_digest,candidate_snapshot_digest,config_digest,policy_digest,resume_target_state,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", (run_id, "CREATED", 0, goal["goal_revision_id"], None, None, None, None, None, None, now, now))
+        conn.execute("INSERT INTO runs(run_id,state,run_version,goal_revision_id,change_revision_id,repository_snapshot_digest,candidate_snapshot_digest,config_digest,policy_digest,resume_target_state,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", (run_id, "CREATED", 0, goal["goal_revision_id"], None, None, None, config_digest, None, None, now, now))
         conn.commit(); store.close()
         _finish(_envelope("run", CommandStatus.SUCCESS, "CLI_RUN_CREATED", "Run created; execution is ready for the deterministic runtime.", run_id=run_id, state="CREATED", data={"run_id": run_id, "state": "CREATED", "goal_revision_id": goal["goal_revision_id"], "blocker": None}), json_output)
     except (OSError, ValueError, sqlite3.Error) as exc:
@@ -242,6 +249,12 @@ def accept(run_id: str, strategy: str = typer.Option("squash", "--strategy"), re
     conn, row = _get_run(repo.resolve(), run_id)
     if row is None:
         conn.close(); _finish(_envelope("accept", CommandStatus.INVALID, "CLI_RUN_NOT_FOUND", "Run was not found.", run_id=run_id), json_output)
+    if row["state"] == "ACCEPTED":
+        integration = conn.conn.execute("SELECT destination_before,destination_after FROM integration_records WHERE run_id=? ORDER BY created_at DESC LIMIT 1", (run_id,)).fetchone()
+        conn.close()
+        if integration is None or integration[1] is None:
+            _finish(_envelope("accept", CommandStatus.INTEGRATION_CONFLICT, "RECOVERY_EXTERNAL_DRIFT", "Landed destination identity is unavailable for an accepted run.", run_id=run_id, state="RECONCILIATION_REQUIRED", data={"strategy": strategy, "candidate_snapshot": row["candidate_snapshot_digest"], "destination_before": integration[0] if integration else None, "destination_after": None}), json_output)
+        _finish(_envelope("accept", CommandStatus.SUCCESS, "CLI_ALREADY_ACCEPTED", "Run was already accepted with the recorded landed identity.", run_id=run_id, state="ACCEPTED", data={"strategy": strategy, "candidate_snapshot": row["candidate_snapshot_digest"], "destination_before": integration[0], "destination_after": integration[1]}), json_output)
     conn.close(); _finish(_envelope("accept", CommandStatus.INCONCLUSIVE, "VERIFY_INCONCLUSIVE", "ACCEPTED requires current READY_FOR_USER evidence, integration, and post-integration verification.", run_id=run_id, state=row["state"], data={"strategy": strategy, "candidate_snapshot": None, "destination_before": None, "destination_after": None}), json_output)
 
 

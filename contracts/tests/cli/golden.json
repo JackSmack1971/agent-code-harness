@@ -1,0 +1,6 @@
+[
+  {"command":"doctor","status":"SUCCESS","exit_class":0},
+  {"command":"run","status":"SUCCESS","exit_class":0},
+  {"command":"cancel","status":"INTERRUPTED","exit_class":9},
+  {"command":"reject","status":"SUCCESS","symbolic_code":"CLI_ALREADY_REJECTED","exit_class":0}
+]

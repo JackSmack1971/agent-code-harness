@@ -16,6 +16,7 @@ from typing import Any
 import typer
 import yaml
 from jsonschema import Draft202012Validator
+from referencing import Registry, Resource
 
 from agentic_harness import __version__
 from agentic_harness._canonical import canonical_json_bytes
@@ -293,9 +294,24 @@ def contracts_check(json_output: bool = typer.Option(False, "--json")) -> None:
                 versions[document["x-contract-name"]] = document.get("x-contract-version", 0)
         except Exception as exc:
             failures.append(f"{path.relative_to(root)}: {exc}")
+    schema_resources = []
+    for path in sorted(root.rglob("*.schema.json")):
+        try:
+            document = json.loads(path.read_text(encoding="utf-8"))
+            if "$id" in document:
+                schema_resources.append((document["$id"], Resource.from_contents(document)))
+        except Exception:
+            pass
+    registry = Registry().with_resources(schema_resources)
     for path in sorted(root.glob("*.yaml")):
         try:
-            yaml.safe_load(path.read_text(encoding="utf-8"))
+            document = yaml.safe_load(path.read_text(encoding="utf-8"))
+            schema_path = path.with_suffix(".schema.json")
+            if schema_path.is_file() and isinstance(document, dict) and document.get("$schema") == json.loads(schema_path.read_text(encoding="utf-8")).get("$id"):
+                schema = json.loads(schema_path.read_text(encoding="utf-8"))
+                errors = sorted(Draft202012Validator(schema, registry=registry).iter_errors(document), key=str)
+                if errors:
+                    failures.append(f"{path.relative_to(root)}: {errors[0].message}")
         except Exception as exc:
             failures.append(f"{path.relative_to(root)}: {exc}")
     fixture_counts = {p.name: len(list(p.glob("*.json"))) for p in (root / "tests").iterdir() if p.is_dir()} if (root / "tests").is_dir() else {}

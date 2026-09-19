@@ -1,0 +1,5 @@
+[
+  {"command":"run","status":"INVALID","symbolic_code":"CLI_INVALID_USAGE","exit_class":2},
+  {"command":"status","status":"INVALID","symbolic_code":"CLI_RUN_NOT_FOUND","exit_class":2},
+  {"command":"resume","status":"INCONCLUSIVE","symbolic_code":"RECOVERY_EXTERNAL_DRIFT","exit_class":6}
+]

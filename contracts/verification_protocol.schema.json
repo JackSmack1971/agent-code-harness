@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-coding-harness.dev/contracts/verification_protocol.schema.json",
+  "x-contract-name": "VerificationProtocol",
+  "x-contract-version": 1,
+  "description": "Protocol registry aliases the canonical VerificationCheckSpec and evidence vocabulary owned by DomainSchemas and SemanticTypes.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {},
+  "x-check-mechanism-ref": "domain_schemas.schema.json#/$defs/CheckMechanism",
+  "x-success-predicate-ref": "domain_schemas.schema.json#/$defs/SuccessPredicate",
+  "x-identity-dependency-ref": "domain_schemas.schema.json#/$defs/IdentityDependency"
+}

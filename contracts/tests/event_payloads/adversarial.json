@@ -1,0 +1,4 @@
+[
+  {"event_type":"run.created","payload":{"run_id":"run-1","unknown":true}},
+  {"event_type":"not.registered","payload":{}}
+]

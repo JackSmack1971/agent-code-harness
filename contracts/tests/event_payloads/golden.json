@@ -1,0 +1,5 @@
+[
+  {"event_type":"run.created","payload":{"run_id":"run-1"}},
+  {"event_type":"approval.consumed","payload":{"approval_id":"approval-1","txn_id":"txn-1"}},
+  {"event_type":"reconciliation.completed","payload":{"txn_id":"txn-1","classification":"APPLIED_MATCH"}}
+]

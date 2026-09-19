@@ -1,0 +1,5 @@
+{
+  "contract":"RepositoryIdentity",
+  "version":1,
+  "fixtures":["clean","modified","staged","partially_staged","untracked","ignored","symlink","executable_bit","rename","deleted_staged","intent_to_add","merge_conflict","submodule_clean","submodule_dirty","detached_head","unborn_branch","sparse_checkout","non_utf8_path","case_collision_manifest"]
+}

@@ -1,0 +1,5 @@
+[
+  {"research_id":"GIT_MIN_VERSION","resolved":true,"failure_behavior":"BLOCKED_CAPABILITY"},
+  {"research_id":"GIT_WORKTREE_BEHAVIOR","resolved":false,"failure_behavior":"BLOCKED_CAPABILITY"},
+  {"research_id":"GIT_SHA256_REPOSITORY_SUPPORT","resolved":false,"failure_behavior":"UNSUPPORTED"}
+]

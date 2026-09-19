@@ -225,16 +225,17 @@ normalization, and classification/redaction foundation):
   `tests/policy_contract/` — golden/adversarial fixtures, same
   `{"def": ..., "value": ...}` convention as `tests/domain_schemas/`.
 
-`EventRegistry v1`, `SideEffectTransactionProtocol v1`, and `PersistenceSchema
-v1` are materialized in this repository as the Phase 0F foundation. Their
-runtime implementations are `src/agentic_harness/_events.py`,
-`_side_effects.py`, and `_persistence.py`; the machine-readable authorities
-are the adjacent registry/schema files and `persistence.sql`. Other later
-contracts (`CLIProtocol v1`, `ToolProtocol v1`, `VerificationProtocol v1`,
-etc.) remain out of scope until their phases are implemented. Wiring the
-policy/resource/redaction foundation into an actual sandboxed tool-execution
-path (native fs/process/search tools, the container backend, live approval
-persistence) remains Phase 2/3 work.
+`EventRegistry v1`, `SideEffectTransactionProtocol v1`, `PersistenceSchema
+v1`, `CLIProtocol v1`, `ToolProtocol v1`, and `VerificationProtocol v1` are
+materialized as the Phase 0J contract foundation. Their runtime
+implementations are `src/agentic_harness/_events.py`, `_side_effects.py`,
+`_persistence.py`, `cli.py`, and the protocol/verification modules; the
+machine-readable authorities are the adjacent registry/schema files and
+`persistence.sql`. The Phase 0J contracts check and fixture suite prove the
+offline contract boundary. Wiring these foundations into the later
+sandbox/container backends and live provider/approval integrations remains
+deferred to their roadmap phases and is explicitly unsupported or blocked by
+the research register where applicable.
 
 Offline conformance tests live in `../tests/` and run with `uv run pytest`.
 

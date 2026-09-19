@@ -1,0 +1,5 @@
+[
+  {"command":"cancel","data":{"state":"INTERRUPTED","checkpointed":true}},
+  {"command":"reject","data":{"terminal_state":"REJECTED","reason_artifact":null}},
+  {"command":"resume","data":{"resulting_state":"RECONCILIATION_REQUIRED","recovered_from":"INTERRUPTED","blocker":"RECOVERY_EXTERNAL_DRIFT"}}
+]

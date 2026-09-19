@@ -1,0 +1,6 @@
+[
+  {"classification":"NOT_APPLIED","retry_allowed":true},
+  {"classification":"APPLIED_MATCH","retry_allowed":false},
+  {"classification":"APPLIED_DIVERGENT","retry_allowed":false},
+  {"classification":"UNKNOWN","retry_allowed":false}
+]

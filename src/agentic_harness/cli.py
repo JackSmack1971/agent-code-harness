@@ -286,12 +286,22 @@ def contracts_check(json_output: bool = typer.Option(False, "--json")) -> None:
     files = sorted(str(p.relative_to(root)) for p in root.rglob("*") if p.is_file())
     failures: list[str] = []
     versions: dict[str, int] = {}
+    schemas: dict[str, tuple[Path, dict[str, Any]]] = {}
     for path in sorted(root.rglob("*.schema.json")):
         try:
             document = json.loads(path.read_text(encoding="utf-8"))
             Draft202012Validator.check_schema(document)
             if "x-contract-name" in document:
+                if document["x-contract-name"] in versions:
+                    failures.append(f"duplicate contract name: {document['x-contract-name']}")
                 versions[document["x-contract-name"]] = document.get("x-contract-version", 0)
+            schema_id = document.get("$id")
+            if not isinstance(schema_id, str):
+                failures.append(f"{path.relative_to(root)}: missing $id")
+            elif schema_id in schemas:
+                failures.append(f"duplicate schema $id: {schema_id}")
+            else:
+                schemas[schema_id] = (path, document)
         except Exception as exc:
             failures.append(f"{path.relative_to(root)}: {exc}")
     schema_resources = []
@@ -303,7 +313,7 @@ def contracts_check(json_output: bool = typer.Option(False, "--json")) -> None:
         except Exception:
             pass
     registry = Registry().with_resources(schema_resources)
-    for path in sorted(root.glob("*.yaml")):
+    for path in sorted(root.rglob("*.yaml")):
         try:
             document = yaml.safe_load(path.read_text(encoding="utf-8"))
             schema_path = path.with_suffix(".schema.json")
@@ -314,9 +324,116 @@ def contracts_check(json_output: bool = typer.Option(False, "--json")) -> None:
                     failures.append(f"{path.relative_to(root)}: {errors[0].message}")
         except Exception as exc:
             failures.append(f"{path.relative_to(root)}: {exc}")
+    def walk_refs(value: Any) -> list[str]:
+        refs: list[str] = []
+        if isinstance(value, dict):
+            if isinstance(value.get("$ref"), str):
+                refs.append(value["$ref"])
+            for child in value.values():
+                refs.extend(walk_refs(child))
+        elif isinstance(value, list):
+            for child in value:
+                refs.extend(walk_refs(child))
+        return refs
+
+    for schema_id, (path, document) in schemas.items():
+        for reference in walk_refs(document):
+            base, _, fragment = reference.partition("#")
+            if base:
+                if base.startswith("http"):
+                    if base not in schemas:
+                        failures.append(f"{path.relative_to(root)}: unresolved schema reference {reference}")
+                elif not (path.parent / base).resolve().is_file():
+                    failures.append(f"{path.relative_to(root)}: unresolved schema reference {reference}")
+            if fragment and base.startswith("http") and base in schemas:
+                node: Any = schemas[base][1]
+                try:
+                    for part in fragment.lstrip("/").split("/"):
+                        node = node[part.replace("~1", "/").replace("~0", "~")]
+                except (KeyError, TypeError):
+                    failures.append(f"{path.relative_to(root)}: unresolved schema fragment {reference}")
+
+    def load_yaml_file(relative: str) -> Any:
+        return yaml.safe_load((root / relative).read_text(encoding="utf-8"))
+
+    event_registry = load_yaml_file("event_registry.yaml")
+    event_types = [entry.get("event_type") for entry in event_registry.get("events", [])]
+    if len(event_types) != len(set(event_types)) or not event_types:
+        failures.append("EventRegistry is not unique and non-empty")
+    for entry in event_registry.get("events", []):
+        payload = entry.get("payload_schema")
+        if not isinstance(payload, dict) or payload.get("type") != "object" or not payload.get("required"):
+            failures.append(f"event payload is not concrete: {entry.get('event_type')}")
+
+    state_machine = load_yaml_file("state_machine.yaml")
+    state_names = set(state_machine.get("states", []))
+    transitions = list(state_machine.get("forward_transitions", []))
+    exceptional = state_machine.get("exceptional_transitions", {})
+    transitions.extend(exceptional.get("entries", []) if isinstance(exceptional, dict) else exceptional)
+    for transition in transitions:
+        transition_from = transition.get("from", transition.get("from_state", "ANY_NONTERMINAL"))
+        transition_to = transition.get("to", transition.get("to_state"))
+        if transition_from == "ANY_NONTERMINAL":
+            continue
+        if transition_from not in state_names or transition_to not in state_names:
+            failures.append(f"state transition references unknown state: {transition}")
+    recovery_sources = {item.get("source_state") for item in state_machine.get("recovery_transitions", [])}
+    required_recovery = {"BLOCKED", "INTERRUPTED", "RECOVERY_REQUIRED", "RECONCILIATION_REQUIRED", "INTEGRATION_CONFLICT"}
+    if not required_recovery <= recovery_sources:
+        failures.append("RecoveryProtocol does not cover every recoverable source state")
+    recovery_targets = [item.get("to") for item in state_machine.get("recovery_transitions", [])]
+    for item in state_machine.get("recovery_transitions", []):
+        recovery_targets.extend(branch.get("to") for branch in item.get("branches", []))
+    if "ACCEPTED" in recovery_targets:
+        failures.append("RecoveryProtocol may not target ACCEPTED")
+
+    reason_registry = load_yaml_file("reason_code_registry.yaml")
+    reason_codes = [item.get("code") for item in reason_registry.get("codes", [])]
+    if len(reason_codes) != len(set(reason_codes)):
+        failures.append("ReasonCodeRegistry contains duplicate codes")
+    namespaces = set(reason_registry.get("namespaces", []))
+    if any(item.get("namespace") not in namespaces for item in reason_registry.get("codes", [])):
+        failures.append("ReasonCodeRegistry contains an unregistered namespace")
+
+    tool_registry = load_yaml_file("tool_protocol/registry.yaml")
+    tools = tool_registry.get("tools", [])
+    if len({item.get("tool_name") for item in tools}) != len(tools):
+        failures.append("ToolProtocol contains duplicate tool names")
+    for item in tools:
+        for key in ("request_schema_ref", "result_schema_ref"):
+            if not (root / "tool_protocol" / item[key]).is_file():
+                failures.append(f"tool schema is unavailable: {item.get('tool_name')}:{item[key]}")
+        if not item.get("effect_calculator") or not item.get("resource_calculator"):
+            failures.append(f"tool calculators are not registered: {item.get('tool_name')}")
+
+    research = load_yaml_file("research_register.yaml")
+    research_ids = [item.get("research_id") for item in research.get("records", [])]
+    if len(research_ids) != len(set(research_ids)):
+        failures.append("ResearchRegister contains duplicate research_id values")
+    allowed_failures = {"UNSUPPORTED", "BLOCKED_CAPABILITY", "DEGRADED_DECLARED"}
+    if any(item.get("resolved_value") is None and item.get("failure_behavior") not in allowed_failures for item in research.get("records", [])):
+        failures.append("unresolved research record lacks explicit fail-closed behavior")
+
+    persistence = (root / "persistence.sql").read_text(encoding="utf-8")
+    for required in ("PRAGMA journal_mode=WAL", "PRAGMA synchronous=FULL", "CREATE TABLE IF NOT EXISTS events", "CREATE TABLE IF NOT EXISTS side_effect_txns"):
+        if required not in persistence:
+            failures.append(f"PersistenceSchema missing required durability declaration: {required}")
+
+    required_fixture_groups = {"recovery", "resource_normalization", "side_effect_transactions", "repository_identity", "event_payloads", "cli_data_schemas", "research_register"}
     fixture_counts = {p.name: len(list(p.glob("*.json"))) for p in (root / "tests").iterdir() if p.is_dir()} if (root / "tests").is_dir() else {}
+    missing_groups = sorted(group for group in required_fixture_groups if group not in fixture_counts or fixture_counts[group] == 0)
+    failures.extend(f"missing prescribed fixture group: {group}" for group in missing_groups)
+    proofs = {
+        "schema_references": not any("schema reference" in failure or "schema fragment" in failure for failure in failures),
+        "registries_closed": not any("Registry" in failure or "ToolProtocol" in failure for failure in failures),
+        "state_recovery_total": not any("RecoveryProtocol" in failure or "state transition" in failure for failure in failures),
+        "event_payloads_concrete": not any("event payload" in failure for failure in failures),
+        "durability_declared": not any("PersistenceSchema" in failure for failure in failures),
+        "unresolved_external_facts_fail_closed": not any("research record" in failure for failure in failures),
+        "fixture_groups_complete": not missing_groups,
+    }
     status_value = CommandStatus.SUCCESS if not failures else CommandStatus.INVALID
-    _finish(_envelope("contracts check", status_value, "CLI_CONTRACTS_VALID" if not failures else "CONFIG_INVALID", "Contract sources are valid." if not failures else "Contract validation failed.", data={"contract_versions": versions, "fixture_counts": fixture_counts, "failures": failures, "files": files}), json_output)
+    _finish(_envelope("contracts check", status_value, "CLI_CONTRACTS_VALID" if not failures else "CONFIG_INVALID", "Contract sources are valid." if not failures else "Contract validation failed.", data={"contract_versions": versions, "fixture_counts": fixture_counts, "failures": failures, "files": files, "proofs": proofs}), json_output)
 
 
 def main() -> None:

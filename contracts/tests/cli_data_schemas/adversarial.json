@@ -1,0 +1,4 @@
+[
+  {"command":"cancel","data":{"state":"INTERRUPTED"}},
+  {"command":"reject","data":{"terminal_state":"REJECTED","reason_artifact":null,"unknown":true}}
+]

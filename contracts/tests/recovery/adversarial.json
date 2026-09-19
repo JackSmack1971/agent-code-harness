@@ -1,0 +1,4 @@
+[
+  {"source_state":"ACCEPTED","target_mode":"RESUME_TARGET_STATE","command":"resume"},
+  {"source_state":"INTEGRATION_CONFLICT","target_mode":"FIXED_BY_DISPOSITION","disposition":"UNKNOWN","to":"ACCEPTED","command":"resolve_conflict"}
+]

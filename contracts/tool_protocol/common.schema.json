@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-coding-harness.dev/contracts/tool_protocol/common.schema.json",
+  "x-contract-name": "ToolProtocolCommon",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "resource": {"type": "object", "additionalProperties": false, "required": ["kind", "normalized_key"], "properties": {"kind": {"type": "string", "minLength": 1}, "normalized_key": {"type": "string", "minLength": 1}}},
+    "error": {"type": "object", "additionalProperties": false, "required": ["code", "category", "message", "retryable", "details"], "properties": {"code": {"type": "string", "pattern": "^[A-Z][A-Z0-9_]+$"}, "category": {"enum": ["VALIDATION", "POLICY", "ENVIRONMENT", "PROCESS", "FILESYSTEM", "GIT", "NETWORK", "PROVIDER", "INTERNAL"]}, "message": {"type": "string"}, "retryable": {"type": "boolean"}, "details": {"type": "object"}}},
+    "request": {"type": "object", "additionalProperties": false, "required": ["tool_call_id", "run_id", "tool_name", "tool_version", "tool_schema_digest", "arguments", "argument_digest", "requested_effects", "requested_resources", "expected_candidate_snapshot", "timeout_ms"], "properties": {"tool_call_id": {"type": "string", "minLength": 1}, "run_id": {"type": "string", "minLength": 1}, "tool_name": {"type": "string", "minLength": 1}, "tool_version": {"const": 1}, "tool_schema_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}, "arguments": {"type": "object"}, "argument_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}, "requested_effects": {"type": "array", "uniqueItems": true, "items": {"type": "string"}}, "requested_resources": {"type": "array", "items": {"$ref": "#/$defs/resource"}}, "expected_candidate_snapshot": {"type": ["string", "null"]}, "timeout_ms": {"type": ["integer", "null"], "minimum": 1}}},
+    "result": {"type": "object", "additionalProperties": false, "required": ["tool_call_id", "status", "started_at", "finished_at", "exit_code", "stdout", "stderr", "artifacts", "pre_candidate_snapshot", "post_candidate_snapshot", "error"], "properties": {"tool_call_id": {"type": "string", "minLength": 1}, "status": {"enum": ["SUCCESS", "FAILURE", "TIMEOUT", "CANCELLED", "DENIED", "BLOCKED_CAPABILITY", "STALE_PRECONDITION"]}, "started_at": {"type": "string", "format": "date-time"}, "finished_at": {"type": "string", "format": "date-time"}, "exit_code": {"type": ["integer", "null"]}, "stdout": {}, "stderr": {}, "artifacts": {"type": "array", "items": {"type": "string"}}, "pre_candidate_snapshot": {"type": ["string", "null"]}, "post_candidate_snapshot": {"type": ["string", "null"]}, "error": {"anyOf": [{"$ref": "#/$defs/error"}, {"type": "null"}]}}}
+  }
+}

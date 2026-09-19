@@ -1,0 +1,8 @@
+[
+  { "reason_code": "config_invalid", "reason": "lowercase is not a registered symbolic identifier" },
+  { "reason_code": "CONFIG-INVALID", "reason": "hyphen is not a valid separator" },
+  { "reason_code": "CONFIG_INVALID_TOTALLY_MADE_UP", "reason": "not present in the registry" },
+  { "reason_code": "GHOST_NAMESPACE_CODE", "reason": "namespace GHOST_ is not declared" },
+  { "reason_code": "", "reason": "empty reason code" },
+  { "reason_code": null, "reason": "every non-success CLI envelope MUST carry a registered code, never null" }
+]

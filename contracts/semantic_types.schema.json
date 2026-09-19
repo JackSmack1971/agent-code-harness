@@ -1,0 +1,335 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-coding-harness.dev/contracts/semantic_types.schema.json",
+  "x-contract-name": "SemanticTypes",
+  "x-contract-version": 1,
+  "$comment": "Extension point: this document is a $defs library, not an instance-validating document in its own right (Blueprint 10.3: 'the only authoritative registry for shared scalar, identifier, nested, and discriminated-union types referenced across contracts'). Other contract schemas MUST $ref into #/$defs here rather than redeclaring a type. The top-level schema intentionally validates only an empty placeholder instance.",
+  "title": "SemanticTypes v1",
+  "description": "Sole authoritative registry for shared scalar, identifier, and nested/discriminated-union types referenced across contracts (Unified Implementation Blueprint 10.3).",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {},
+  "$defs": {
+    "Digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "description": "10.3.1 / CanonicalSerialization v1 digest format."
+    },
+    "GitOid": {
+      "type": "string",
+      "pattern": "^(sha1:[0-9a-f]{40}|sha256:[0-9a-f]{64})$",
+      "description": "10.3.1. Algorithm-tagged Git object id. Raw untagged Git OIDs MUST NOT cross a durable contract boundary."
+    },
+    "ContractVersion": { "type": "integer", "minimum": 1, "description": "10.3.1. Positive integer major contract version." },
+    "RunVersion": { "type": "integer", "minimum": 0, "description": "10.3.1. Non-negative monotonic run/candidate version counter." },
+    "SchemaVersion": { "type": "integer", "minimum": 1, "description": "10.3.1. Positive integer durable schema version." },
+    "UtcTimestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{6})?Z$",
+      "description": "10.3.1 / 10.4.2. Canonical UTC timestamp; fractional seconds omitted when zero, else exactly six digits."
+    },
+    "CanonicalPath": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.?(?:/|$)).+$",
+      "description": "10.3.1. Normalized repo-relative POSIX path: no leading slash, no '.' or '..' path segment."
+    },
+    "NonEmptyString": { "type": "string", "minLength": 1, "description": "10.3.1. Unicode scalar sequence length >= 1." },
+    "ReasonCode": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$",
+      "description": "10.3.1. Registry-backed symbolic identifier. Membership is validated against contracts/reason_code_registry.yaml, the sole registry (Canonical Identity Rules); this pattern intentionally does not re-enumerate codes here to avoid a duplicate hand-maintained authority."
+    },
+    "SymbolicCode": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$",
+      "description": "10.3.1. Registry-backed CLI identifier, same non-duplication rule as ReasonCode."
+    },
+
+    "UUIDv7Id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "10.3.2. Lowercase hyphenated UUIDv7 (version nibble 7, RFC 9562 variant bits 10xx). Harness-owned generator: src/agentic_harness/_identity.py."
+    },
+    "RunId": { "$ref": "#/$defs/UUIDv7Id" },
+    "GoalId": { "$ref": "#/$defs/UUIDv7Id" },
+    "GoalRevisionId": { "$ref": "#/$defs/UUIDv7Id" },
+    "ChangeId": { "$ref": "#/$defs/UUIDv7Id" },
+    "ChangeRevisionId": { "$ref": "#/$defs/UUIDv7Id" },
+    "PlanId": { "$ref": "#/$defs/UUIDv7Id" },
+    "CheckId": { "$ref": "#/$defs/UUIDv7Id" },
+    "ArtifactId": {
+      "$ref": "#/$defs/UUIDv7Id",
+      "$comment": "10.3.2 lists ArtifactId as harness-owned UUIDv7, superseding the earlier pre-closure draft in 9.6.2 that described it as sha256:<hex>. Authority order (Closure-amended requirements over pre-closure body, per CLAUDE.md) resolves this in favor of 10.3.2. Content-addressing of artifact bytes remains available via each artifact record's own Digest field; ArtifactId is the identifier, not the content hash."
+    },
+    "EventId": { "$ref": "#/$defs/UUIDv7Id" },
+    "ToolCallId": { "$ref": "#/$defs/UUIDv7Id" },
+    "ModelCallId": { "$ref": "#/$defs/UUIDv7Id" },
+    "ApprovalId": { "$ref": "#/$defs/UUIDv7Id" },
+    "WorkPackageId": { "$ref": "#/$defs/UUIDv7Id" },
+    "CheckpointId": { "$ref": "#/$defs/UUIDv7Id" },
+    "IntegrationId": { "$ref": "#/$defs/UUIDv7Id" },
+    "ReviewId": { "$ref": "#/$defs/UUIDv7Id" },
+    "ExperimentId": { "$ref": "#/$defs/UUIDv7Id" },
+
+    "SnapshotDigest": { "$ref": "#/$defs/Digest", "description": "9.6.2. Not amended by 10.3.2's UUIDv7 list." },
+    "ConfigDigest": { "$ref": "#/$defs/Digest" },
+    "PolicyDigest": { "$ref": "#/$defs/Digest" },
+
+    "Effect": {
+      "type": "string",
+      "$comment": "Owned by PolicyContract v1 (Blueprint 9.12.1, Phase 2 deliverable), not yet materialized under contracts/. This is a string carrier only so WorkPackage/ChangeContract can reference the type now without SemanticTypes v1 pre-empting or duplicating PolicyContract v1's closed 11-value enum (READ, WORKSPACE_WRITE, PROCESS_EXEC, SHELL_INTERPRETATION, NETWORK, DATA_EGRESS, EXTERNAL_READ, EXTERNAL_WRITE, SECRET_ACCESS, DESTRUCTIVE, PRIVILEGED). Do not re-enumerate that list here; consumers validate against PolicyContract v1 once it exists.",
+      "minLength": 1
+    },
+    "ResourcePattern": {
+      "type": "object",
+      "$comment": "Owned by ResourceNormalization v1 (Blueprint 10.10, not yet materialized under contracts/). This is a structural carrier only (kind/match/value) so WorkPackage can reference the type now without SemanticTypes v1 pre-empting ResourceNormalization v1's kind-specific grammar. Do not add kind-specific value shapes here.",
+      "additionalProperties": false,
+      "required": ["kind", "match", "value"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1 },
+        "match": { "type": "string", "enum": ["EXACT", "PREFIX", "GLOB"] },
+        "value": { "type": "object" }
+      }
+    },
+
+    "AcceptanceCriterion": {
+      "type": "object",
+      "description": "10.3.3. criterion_id is unique within one Goal revision.",
+      "additionalProperties": false,
+      "required": ["criterion_id", "text", "mandatory", "verification_class", "source", "source_ref", "success_semantics"],
+      "properties": {
+        "criterion_id": { "type": "string", "minLength": 1 },
+        "text": { "$ref": "#/$defs/NonEmptyString" },
+        "mandatory": { "type": "boolean", "default": true },
+        "verification_class": {
+          "type": "string",
+          "enum": ["BEHAVIORAL", "REGRESSION", "STRUCTURAL", "INTENT", "POST_INTEGRATION"]
+        },
+        "source": { "type": "string", "enum": ["USER", "DERIVED"] },
+        "source_ref": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "success_semantics": { "$ref": "#/$defs/EvidenceRequirement" }
+      }
+    },
+
+    "EvidenceClaimRef": { "type": "string", "minLength": 1, "description": "10.3.4. Reference to an EvidenceClaim.claim_id." },
+
+    "EvidenceRequirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "claim_refs", "threshold", "allow_waiver"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["ALL", "ANY", "THRESHOLD"] },
+        "claim_refs": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/EvidenceClaimRef" }
+        },
+        "threshold": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }] },
+        "allow_waiver": { "type": "boolean", "default": false }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "mode": { "const": "THRESHOLD" } }, "required": ["mode"] },
+          "then": { "properties": { "threshold": { "type": "integer", "minimum": 1 } }, "required": ["threshold"] }
+        },
+        {
+          "if": { "properties": { "mode": { "enum": ["ALL", "ANY"] } }, "required": ["mode"] },
+          "then": { "properties": { "threshold": { "const": null } } }
+        }
+      ],
+      "$comment": "10.3.4: THRESHOLD additionally requires 1 <= threshold <= len(claim_refs). The upper bound against claim_refs length is a cross-field arithmetic invariant JSON Schema cannot express directly; it is enforced by runtime validation code and covered by tests/test_semantic_types.py, not by this schema alone."
+    },
+
+    "Uncertainty": {
+      "type": "object",
+      "description": "10.3.5. A blocking USER_RESOLVABLE uncertainty prevents plan finalization; a blocking EXTERNAL_RESEARCH uncertainty prevents enabling the dependent capability until resolved.",
+      "additionalProperties": false,
+      "required": ["uncertainty_id", "question", "resolution_class", "status", "resolution", "resolution_evidence", "blocking"],
+      "properties": {
+        "uncertainty_id": { "type": "string", "minLength": 1 },
+        "question": { "$ref": "#/$defs/NonEmptyString" },
+        "resolution_class": {
+          "type": "string",
+          "enum": ["DETERMINISTIC", "REPOSITORY_RESOLVABLE", "USER_RESOLVABLE", "EXTERNAL_RESEARCH"]
+        },
+        "status": { "type": "string", "enum": ["OPEN", "RESOLVED", "BLOCKED"] },
+        "resolution": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+        "resolution_evidence": { "type": "array", "items": { "$ref": "#/$defs/Digest" } },
+        "blocking": { "type": "boolean" }
+      }
+    },
+
+    "EvidenceClaim": {
+      "type": "object",
+      "description": "10.3.6.",
+      "additionalProperties": false,
+      "required": ["claim_id", "proposition", "criterion_refs", "required_evidence_kinds"],
+      "properties": {
+        "claim_id": { "type": "string", "minLength": 1 },
+        "proposition": { "$ref": "#/$defs/NonEmptyString" },
+        "criterion_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "required_evidence_kinds": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["CHECK_RESULT", "REPOSITORY_FACT", "ARTIFACT", "REVIEW"] }
+        }
+      }
+    },
+
+    "EvidenceRef": {
+      "type": "object",
+      "description": "10.3.6.",
+      "additionalProperties": false,
+      "required": ["kind", "digest", "candidate_snapshot"],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["VERIFICATION_RESULT", "ARTIFACT", "REPOSITORY_FACT", "REVIEW_RESULT", "WAIVER"]
+        },
+        "digest": { "$ref": "#/$defs/Digest" },
+        "candidate_snapshot": { "anyOf": [{ "$ref": "#/$defs/Digest" }, { "type": "null" }] }
+      }
+    },
+
+    "CriterionEvidence": {
+      "type": "object",
+      "description": "10.3.6.",
+      "additionalProperties": false,
+      "required": ["criterion_id", "claim_refs", "evidence_refs", "evaluation", "evaluator_version"],
+      "properties": {
+        "criterion_id": { "type": "string", "minLength": 1 },
+        "claim_refs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "evidence_refs": { "type": "array", "items": { "$ref": "#/$defs/EvidenceRef" } },
+        "evaluation": { "type": "string", "enum": ["SATISFIED", "UNSATISFIED", "INCONCLUSIVE", "WAIVED"] },
+        "evaluator_version": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "CriterionReview": {
+      "type": "object",
+      "description": "10.3.6.",
+      "additionalProperties": false,
+      "required": ["criterion_id", "status", "rationale_artifact_id", "evidence_refs"],
+      "properties": {
+        "criterion_id": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "enum": ["PASS", "FAIL", "INCONCLUSIVE"] },
+        "rationale_artifact_id": { "$ref": "#/$defs/ArtifactId" },
+        "evidence_refs": { "type": "array", "items": { "$ref": "#/$defs/EvidenceRef" } }
+      }
+    },
+
+    "Waiver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "waiver_id", "scope", "scope_ref", "reason", "issued_by", "issued_at",
+        "expires_at", "bound_candidate", "bound_change_revision", "policy_rule_id"
+      ],
+      "properties": {
+        "waiver_id": { "$ref": "#/$defs/UUIDv7Id" },
+        "scope": { "type": "string", "enum": ["CHECK", "CLAIM", "CRITERION"] },
+        "scope_ref": { "type": "string", "minLength": 1 },
+        "reason": { "$ref": "#/$defs/NonEmptyString" },
+        "issued_by": { "type": "string", "enum": ["USER", "TRUSTED_CI"] },
+        "issued_at": { "$ref": "#/$defs/UtcTimestamp" },
+        "expires_at": { "anyOf": [{ "$ref": "#/$defs/UtcTimestamp" }, { "type": "null" }] },
+        "bound_candidate": { "anyOf": [{ "$ref": "#/$defs/Digest" }, { "type": "null" }] },
+        "bound_change_revision": { "$ref": "#/$defs/ChangeRevisionId" },
+        "policy_rule_id": { "type": "string", "minLength": 1 }
+      },
+      "$comment": "10.3.7: a waiver changes gate requirements; it never changes a check status to PASS."
+    },
+
+    "DataClassification": {
+      "type": "string",
+      "enum": ["PUBLIC", "INTERNAL", "SENSITIVE", "SECRET"],
+      "description": "10.3.8. Canonical order PUBLIC < INTERNAL < SENSITIVE < SECRET; see classification_order below for the machine-readable ordering."
+    },
+    "DataClassificationOrder": {
+      "type": "array",
+      "const": ["PUBLIC", "INTERNAL", "SENSITIVE", "SECRET"],
+      "description": "10.3.8. Single authoritative ascending order used for max(classification(inputs))."
+    },
+    "Taint": {
+      "type": "string",
+      "enum": [
+        "SECRET_DERIVED",
+        "USER_PRIVATE",
+        "REPOSITORY_UNTRUSTED",
+        "EXTERNAL_UNTRUSTED",
+        "MODEL_GENERATED",
+        "TOOL_OUTPUT_UNTRUSTED"
+      ],
+      "description": "10.3.8. Independent set; derived content receives the union of input taints. V1 defines no automatic secret declassification rule."
+    },
+    "TaintSet": {
+      "type": "array",
+      "description": "10.3.8. Union of input taints for derived content.",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/Taint" }
+    },
+
+    "InlineTextOrArtifact": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "text", "encoding"],
+          "properties": {
+            "kind": { "const": "INLINE" },
+            "text": { "type": "string" },
+            "encoding": { "const": "UTF8" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "artifact_id", "digest", "media_type"],
+          "properties": {
+            "kind": { "const": "ARTIFACT" },
+            "artifact_id": { "$ref": "#/$defs/ArtifactId" },
+            "digest": { "$ref": "#/$defs/Digest" },
+            "media_type": { "type": "string", "minLength": 1 }
+          }
+        }
+      ],
+      "description": "10.3.9. Inline payload limits MUST NOT exceed the contract maximum of 1 MiB; larger payloads are artifactized (kind: ARTIFACT)."
+    },
+
+    "WorkPackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "work_package_id", "parent_run_id", "parent_change_revision", "base_candidate_snapshot",
+        "objective", "allowed_paths", "allowed_effects", "acceptance_criteria",
+        "context_artifacts", "budget", "child_depth", "created_at", "digest"
+      ],
+      "properties": {
+        "work_package_id": { "$ref": "#/$defs/WorkPackageId" },
+        "parent_run_id": { "$ref": "#/$defs/RunId" },
+        "parent_change_revision": { "$ref": "#/$defs/ChangeRevisionId" },
+        "base_candidate_snapshot": { "$ref": "#/$defs/Digest" },
+        "objective": { "$ref": "#/$defs/NonEmptyString" },
+        "allowed_paths": { "type": "array", "items": { "$ref": "#/$defs/ResourcePattern" } },
+        "allowed_effects": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/Effect" } },
+        "acceptance_criteria": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "context_artifacts": { "type": "array", "items": { "$ref": "#/$defs/ArtifactId" } },
+        "budget": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_tokens", "max_cost_usd", "max_tool_calls"],
+          "properties": {
+            "max_tokens": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+            "max_cost_usd": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+            "max_tool_calls": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] }
+          }
+        },
+        "child_depth": { "const": 1 },
+        "created_at": { "$ref": "#/$defs/UtcTimestamp" },
+        "digest": { "$ref": "#/$defs/Digest" }
+      },
+      "$comment": "10.3.10: a child result is a ChildResult containing a commit OID or patch artifact plus evidence; the child MUST NOT mutate parent authoritative state directly. child_depth is fixed at 1 because recursive subagents are prohibited in v1 (architecture-boundaries.md)."
+    }
+  }
+}

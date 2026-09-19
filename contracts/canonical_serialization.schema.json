@@ -1,0 +1,200 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-coding-harness.dev/contracts/canonical_serialization.schema.json",
+  "x-contract-name": "CanonicalSerialization",
+  "x-contract-version": 1,
+  "title": "CanonicalSerialization v1",
+  "description": "Sole authoritative rule set and golden/adversarial vector registry for canonical UTF-8 JSON serialization and SHA-256 digesting of durable objects (Unified Implementation Blueprint 9.5, 10.4).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "x-contract-name",
+    "x-contract-version",
+    "digest",
+    "value_model",
+    "object_rules",
+    "json_bytes",
+    "type_normalization",
+    "decimal_rules",
+    "datetime_rules",
+    "unicode_rules",
+    "golden_vectors",
+    "adversarial_vectors"
+  ],
+  "properties": {
+    "$schema": { "const": "https://agentic-coding-harness.dev/contracts/canonical_serialization.schema.json" },
+    "x-contract-name": { "const": "CanonicalSerialization" },
+    "x-contract-version": { "type": "integer", "minimum": 1 },
+    "digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "prefix", "hex_case"],
+      "properties": {
+        "algorithm": { "const": "sha256" },
+        "prefix": { "const": "sha256:" },
+        "hex_case": { "const": "lower" }
+      }
+    },
+    "value_model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["allowed_types", "forbidden_types"],
+      "properties": {
+        "allowed_types": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["null", "boolean", "integer", "string", "array", "object"] }
+        },
+        "forbidden_types": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["float", "bytes"] }
+        }
+      }
+    },
+    "object_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key_type", "key_ordering", "duplicate_keys", "omitted_vs_null", "unknown_fields"],
+      "properties": {
+        "key_type": { "const": "string" },
+        "key_ordering": { "const": "utf8_byte_lexicographic" },
+        "duplicate_keys": { "const": "invalid" },
+        "omitted_vs_null": { "const": "distinct" },
+        "unknown_fields": { "const": "invalid_for_strict_durable_schemas" }
+      }
+    },
+    "json_bytes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["encoding", "bom", "whitespace", "literals", "escape"],
+      "properties": {
+        "encoding": { "const": "UTF-8" },
+        "bom": { "const": false },
+        "whitespace": { "const": "none" },
+        "literals": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": { "type": "string", "enum": ["true", "false", "null"] }
+        },
+        "escape": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["required", "not_gratuitously_escaped"],
+          "properties": {
+            "required": {
+              "type": "array",
+              "items": { "type": "string", "enum": ["quotation_mark", "reverse_solidus", "control_0x00_0x1F"] }
+            },
+            "not_gratuitously_escaped": {
+              "type": "array",
+              "items": { "type": "string", "enum": ["solidus", "U+2028", "U+2029"] }
+            }
+          }
+        }
+      }
+    },
+    "type_normalization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["uuid", "enum", "datetime", "date", "decimal", "set"],
+      "properties": {
+        "uuid": { "const": "lowercase_hyphenated_string" },
+        "enum": { "const": "declared_stable_string_value" },
+        "datetime": { "const": "YYYY-MM-DDTHH:MM:SS[.ffffff]Z" },
+        "date": { "const": "YYYY-MM-DD" },
+        "decimal": { "const": "normalized_base10_string_no_exponent" },
+        "set": { "const": "array_sorted_by_element_canonical_bytes" }
+      }
+    },
+    "decimal_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reject",
+        "signed_zero_canonicalizes_to",
+        "scientific_notation",
+        "trailing_fractional_zeros",
+        "empty_fraction_decimal_point",
+        "leading_plus",
+        "default_max_digit_count",
+        "digit_count_exceeded_behavior"
+      ],
+      "properties": {
+        "reject": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "enum": ["nan", "snan", "infinity", "negative_infinity"] }
+        },
+        "signed_zero_canonicalizes_to": { "const": "0" },
+        "scientific_notation": { "const": "forbidden" },
+        "trailing_fractional_zeros": { "const": "removed" },
+        "empty_fraction_decimal_point": { "const": "removed" },
+        "leading_plus": { "const": "forbidden" },
+        "default_max_digit_count": { "type": "integer", "minimum": 1 },
+        "digit_count_exceeded_behavior": { "const": "reject_not_truncate" }
+      }
+    },
+    "datetime_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["naive_datetime", "offset_conversion", "leap_seconds", "fractional_seconds", "year_range"],
+      "properties": {
+        "naive_datetime": { "const": "invalid" },
+        "offset_conversion": { "const": "convert_to_utc" },
+        "leap_seconds": { "const": "invalid" },
+        "fractional_seconds": { "const": "omit_if_zero_else_exactly_six_digits" },
+        "year_range": { "const": "python_datetime_supported_range_only" }
+      }
+    },
+    "unicode_rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["normalization", "invalid_surrogates", "invalid_utf8"],
+      "properties": {
+        "normalization": { "const": "none" },
+        "invalid_surrogates": { "const": "rejected" },
+        "invalid_utf8": { "const": "rejected" }
+      }
+    },
+    "golden_vectors": {
+      "type": "array",
+      "minItems": 4,
+      "items": { "$ref": "#/$defs/golden_vector" }
+    },
+    "adversarial_vectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/adversarial_vector" }
+    }
+  },
+  "$defs": {
+    "golden_vector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "canonical_json", "digest", "frozen"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "canonical_json": { "type": "string", "minLength": 1 },
+        "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "frozen": { "type": "boolean" },
+        "cross_checked_by": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "adversarial_vector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "category", "reason_code"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "category": { "type": "string", "minLength": 1 },
+        "reason_code": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$" }
+      }
+    }
+  }
+}

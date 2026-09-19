@@ -1,0 +1,139 @@
+[
+  { "def": "Digest", "value": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a" },
+  { "def": "GitOid", "value": "sha1:da39a3ee5e6b4b0d3255bfef95601890afd80709" },
+  { "def": "GitOid", "value": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a" },
+  { "def": "ContractVersion", "value": 1 },
+  { "def": "RunVersion", "value": 0 },
+  { "def": "SchemaVersion", "value": 1 },
+  { "def": "UtcTimestamp", "value": "2026-09-19T03:38:00Z" },
+  { "def": "UtcTimestamp", "value": "2026-09-19T03:38:00.000123Z" },
+  { "def": "CanonicalPath", "value": "src/agentic_harness/_canonical.py" },
+  { "def": "NonEmptyString", "value": "x" },
+  { "def": "ReasonCode", "value": "CONFIG_INVALID" },
+  { "def": "SymbolicCode", "value": "DOCTOR_REPORT_ALL_SUPPORTED" },
+  { "def": "UUIDv7Id", "value": "01911f2e-7abc-7def-8abc-0123456789ab" },
+  { "def": "RunId", "value": "01911f2e-7abc-7def-8abc-0123456789ab" },
+  { "def": "ArtifactId", "value": "01911f2e-7abc-7def-8abc-0123456789ab" },
+  { "def": "Effect", "value": "READ" },
+  { "def": "ResourcePattern", "value": { "kind": "repo_path", "match": "EXACT", "value": { "path": "src/x.py" } } },
+  {
+    "def": "AcceptanceCriterion",
+    "value": {
+      "criterion_id": "crit-1",
+      "text": "the CLI exits 0",
+      "mandatory": true,
+      "verification_class": "BEHAVIORAL",
+      "source": "USER",
+      "source_ref": null,
+      "success_semantics": {
+        "mode": "ALL",
+        "claim_refs": ["claim-1"],
+        "threshold": null,
+        "allow_waiver": false
+      }
+    }
+  },
+  {
+    "def": "EvidenceRequirement",
+    "value": { "mode": "ALL", "claim_refs": ["claim-1", "claim-2"], "threshold": null, "allow_waiver": false }
+  },
+  {
+    "def": "EvidenceRequirement",
+    "value": { "mode": "THRESHOLD", "claim_refs": ["claim-1", "claim-2", "claim-3"], "threshold": 2, "allow_waiver": true }
+  },
+  {
+    "def": "Uncertainty",
+    "value": {
+      "uncertainty_id": "unc-1",
+      "question": "does this hold on Windows?",
+      "resolution_class": "REPOSITORY_RESOLVABLE",
+      "status": "OPEN",
+      "resolution": null,
+      "resolution_evidence": [],
+      "blocking": false
+    }
+  },
+  {
+    "def": "EvidenceClaim",
+    "value": {
+      "claim_id": "claim-1",
+      "proposition": "the golden vector digest matches",
+      "criterion_refs": ["crit-1"],
+      "required_evidence_kinds": ["CHECK_RESULT"]
+    }
+  },
+  {
+    "def": "EvidenceRef",
+    "value": {
+      "kind": "VERIFICATION_RESULT",
+      "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "candidate_snapshot": null
+    }
+  },
+  {
+    "def": "CriterionEvidence",
+    "value": {
+      "criterion_id": "crit-1",
+      "claim_refs": ["claim-1"],
+      "evidence_refs": [],
+      "evaluation": "SATISFIED",
+      "evaluator_version": "1"
+    }
+  },
+  {
+    "def": "CriterionReview",
+    "value": {
+      "criterion_id": "crit-1",
+      "status": "PASS",
+      "rationale_artifact_id": "01911f2e-7abc-7def-8abc-0123456789ab",
+      "evidence_refs": []
+    }
+  },
+  {
+    "def": "Waiver",
+    "value": {
+      "waiver_id": "01911f2e-7abc-7def-8abc-0123456789ab",
+      "scope": "CHECK",
+      "scope_ref": "check-1",
+      "reason": "flaky infra, tracked in ISSUE-1",
+      "issued_by": "USER",
+      "issued_at": "2026-09-19T03:38:00Z",
+      "expires_at": null,
+      "bound_candidate": null,
+      "bound_change_revision": "01911f2e-7abc-7def-8abc-0123456789ab",
+      "policy_rule_id": "waiver-rule-1"
+    }
+  },
+  { "def": "DataClassification", "value": "SECRET" },
+  { "def": "DataClassificationOrder", "value": ["PUBLIC", "INTERNAL", "SENSITIVE", "SECRET"] },
+  { "def": "Taint", "value": "MODEL_GENERATED" },
+  { "def": "TaintSet", "value": ["MODEL_GENERATED", "REPOSITORY_UNTRUSTED"] },
+  { "def": "InlineTextOrArtifact", "value": { "kind": "INLINE", "text": "hello", "encoding": "UTF8" } },
+  {
+    "def": "InlineTextOrArtifact",
+    "value": {
+      "kind": "ARTIFACT",
+      "artifact_id": "01911f2e-7abc-7def-8abc-0123456789ab",
+      "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "media_type": "text/plain"
+    }
+  },
+  {
+    "def": "WorkPackage",
+    "value": {
+      "work_package_id": "01911f2e-7abc-7def-8abc-0123456789ab",
+      "parent_run_id": "01911f2e-7abc-7def-8abc-0123456789ab",
+      "parent_change_revision": "01911f2e-7abc-7def-8abc-0123456789ab",
+      "base_candidate_snapshot": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "objective": "add a focused unit test",
+      "allowed_paths": [{ "kind": "repo_path", "match": "EXACT", "value": { "path": "tests/test_x.py" } }],
+      "allowed_effects": ["READ", "WORKSPACE_WRITE"],
+      "acceptance_criteria": ["crit-1"],
+      "context_artifacts": [],
+      "budget": { "max_tokens": 50000, "max_cost_usd": "1.00", "max_tool_calls": 20 },
+      "child_depth": 1,
+      "created_at": "2026-09-19T03:38:00Z",
+      "digest": "sha256:ae302866dc4eabd91aac60b6a6e2e5ed315ff7bf2377da9cd00aa1356c211e49"
+    }
+  }
+]

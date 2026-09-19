@@ -1,0 +1,15 @@
+[
+  { "reason_code": "CONFIG_INVALID" },
+  { "reason_code": "CONFIG_INVALID_CONTRACT_VALUE" },
+  { "reason_code": "STATE_INVALID_TRANSITION" },
+  { "reason_code": "POLICY_DENIED" },
+  { "reason_code": "RESOURCE_SCOPE_WIDENING" },
+  { "reason_code": "REPO_IDENTITY_MISMATCH" },
+  { "reason_code": "TOOL_TIMEOUT" },
+  { "reason_code": "VERIFY_STALE_EVIDENCE" },
+  { "reason_code": "RECOVERY_AMBIGUOUS_EFFECT" },
+  { "reason_code": "PERSIST_CORRUPT" },
+  { "reason_code": "SANDBOX_UNENFORCEABLE_SCOPE" },
+  { "reason_code": "CLI_UNSUPPORTED_CAPABILITY" },
+  { "reason_code": "INTERNAL_INVARIANT_VIOLATION" }
+]

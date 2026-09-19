@@ -1,0 +1,60 @@
+[
+  { "def": "Digest", "value": "sha256:DEADBEEF", "reason": "uppercase hex / wrong length" },
+  { "def": "Digest", "value": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a", "reason": "missing sha256: prefix" },
+  { "def": "GitOid", "value": "md5:5d41402abc4b2a76b9719d911017c592", "reason": "unsupported algorithm tag" },
+  { "def": "UtcTimestamp", "value": "2026-09-19T03:38:00", "reason": "missing trailing Z" },
+  { "def": "UtcTimestamp", "value": "2026-09-19 03:38:00Z", "reason": "space instead of T separator" },
+  { "def": "UtcTimestamp", "value": "2026-09-19T03:38:00.123Z", "reason": "fractional seconds not exactly six digits" },
+  { "def": "CanonicalPath", "value": "/abs/path", "reason": "leading slash" },
+  { "def": "CanonicalPath", "value": "../escape/outside", "reason": "leading .. segment" },
+  { "def": "CanonicalPath", "value": "a/../b", "reason": ".. path segment anywhere" },
+  { "def": "CanonicalPath", "value": "a/./b", "reason": ". path segment anywhere" },
+  { "def": "NonEmptyString", "value": "", "reason": "empty string violates minLength 1" },
+  { "def": "UUIDv7Id", "value": "01911f2e-7abc-4def-8abc-0123456789ab", "reason": "version nibble is 4, not 7" },
+  { "def": "UUIDv7Id", "value": "01911f2e-7abc-7def-cabc-0123456789ab", "reason": "variant nibble c is not RFC 4122 (8/9/a/b)" },
+  { "def": "UUIDv7Id", "value": "not-a-uuid", "reason": "not UUID-shaped at all" },
+  {
+    "def": "EvidenceRequirement",
+    "value": { "mode": "THRESHOLD", "claim_refs": ["claim-1"], "threshold": null, "allow_waiver": false },
+    "reason": "THRESHOLD mode requires a non-null threshold"
+  },
+  {
+    "def": "EvidenceRequirement",
+    "value": { "mode": "ALL", "claim_refs": ["claim-1"], "threshold": 1, "allow_waiver": false },
+    "reason": "ALL mode requires threshold to be null"
+  },
+  {
+    "def": "InlineTextOrArtifact",
+    "value": { "kind": "INLINE", "text": "hello", "encoding": "UTF16" },
+    "reason": "encoding must be the literal UTF8"
+  },
+  {
+    "def": "InlineTextOrArtifact",
+    "value": { "kind": "BOTH", "text": "hello" },
+    "reason": "kind must be exactly INLINE or ARTIFACT"
+  },
+  {
+    "def": "WorkPackage",
+    "value": {
+      "work_package_id": "01911f2e-7abc-7def-8abc-0123456789ab",
+      "parent_run_id": "01911f2e-7abc-7def-8abc-0123456789ab",
+      "parent_change_revision": "01911f2e-7abc-7def-8abc-0123456789ab",
+      "base_candidate_snapshot": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+      "objective": "recurse into a grandchild work package",
+      "allowed_paths": [],
+      "allowed_effects": [],
+      "acceptance_criteria": [],
+      "context_artifacts": [],
+      "budget": { "max_tokens": null, "max_cost_usd": null, "max_tool_calls": null },
+      "child_depth": 2,
+      "created_at": "2026-09-19T03:38:00Z",
+      "digest": "sha256:ae302866dc4eabd91aac60b6a6e2e5ed315ff7bf2377da9cd00aa1356c211e49"
+    },
+    "reason": "child_depth must be exactly 1; recursive subagents are prohibited in v1"
+  },
+  {
+    "def": "DataClassification",
+    "value": "TOP_SECRET",
+    "reason": "not one of the four declared classification levels"
+  }
+]

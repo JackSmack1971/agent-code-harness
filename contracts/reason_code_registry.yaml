@@ -1,0 +1,171 @@
+# ReasonCodeRegistry v1 (Unified Implementation Blueprint 10.5).
+# Owner: repository foundation. The sole authoritative source for
+# machine-stable reason codes; tool/policy/CLI records MUST reference these
+# codes rather than arbitrary free-form strings for machine behavior. Codes
+# are append-only within a major contract version (never renamed/removed
+# here without a new x-contract-version).
+$schema: https://agentic-coding-harness.dev/contracts/reason_code_registry.schema.json
+x-contract-name: ReasonCodeRegistry
+x-contract-version: 1
+
+namespaces:
+  - CONFIG_
+  - STATE_
+  - POLICY_
+  - RESOURCE_
+  - REPO_
+  - TOOL_
+  - VERIFY_
+  - RECOVERY_
+  - PERSIST_
+  - PROVIDER_
+  - SANDBOX_
+  - CLI_
+  - INTERNAL_
+
+codes:
+  - code: CONFIG_INVALID
+    namespace: CONFIG_
+    description: Configuration or contract document failed strict schema/type validation.
+    minimum_required: true
+  - code: CONFIG_UNKNOWN_KEY
+    namespace: CONFIG_
+    description: Configuration document carried a field not declared by its strict schema.
+    minimum_required: true
+  - code: CONFIG_ALIAS_CONFLICT
+    namespace: CONFIG_
+    description: Two configuration override sources resolved the same logical key via conflicting aliases.
+    minimum_required: true
+  - code: CONFIG_INVALID_CONTRACT_VALUE
+    namespace: CONFIG_
+    description: >-
+      A durable value failed CanonicalSerialization v1 normalization (forbidden
+      float/bytes, invalid Unicode scalar/UTF-8, non-finite Decimal, Decimal
+      digit-count limit exceeded, naive/leap-second datetime, or a duplicate
+      object key in untrusted JSON). Named after the "INVALID_CONTRACT_VALUE"
+      rejection class in Blueprint 10.4.3; the implementation MUST reject,
+      never truncate or silently coerce.
+    minimum_required: false
+
+  - code: STATE_INVALID_TRANSITION
+    namespace: STATE_
+    description: Requested state transition is not permitted by the deterministic state machine.
+    minimum_required: true
+  - code: STATE_STALE_RUN_VERSION
+    namespace: STATE_
+    description: Operation targeted a run/candidate version older than the current authoritative version.
+    minimum_required: true
+
+  - code: POLICY_DENIED
+    namespace: POLICY_
+    description: Requested effect/resource was denied by policy evaluation.
+    minimum_required: true
+  - code: POLICY_APPROVAL_REQUIRED
+    namespace: POLICY_
+    description: Requested effect/resource requires an explicit approval that is not yet present.
+    minimum_required: true
+  - code: POLICY_APPROVAL_EXPIRED
+    namespace: POLICY_
+    description: A previously granted approval has passed its expiry and can no longer authorize the effect.
+    minimum_required: true
+  - code: POLICY_APPROVAL_CONSUMED
+    namespace: POLICY_
+    description: A previously granted approval was single-use and has already been consumed.
+    minimum_required: true
+
+  - code: RESOURCE_INVALID
+    namespace: RESOURCE_
+    description: Resource reference failed normalization under ResourceNormalization v1.
+    minimum_required: true
+  - code: RESOURCE_SCOPE_WIDENING
+    namespace: RESOURCE_
+    description: Requested resource pattern would widen authority beyond its governing scope.
+    minimum_required: true
+
+  - code: REPO_IDENTITY_MISMATCH
+    namespace: REPO_
+    description: Observed repository/worktree identity does not match the bound identity for this operation.
+    minimum_required: true
+  - code: REPO_DIRTY_DESTINATION
+    namespace: REPO_
+    description: Destination repository state has uncommitted/dirty changes that block the requested operation.
+    minimum_required: true
+  - code: REPO_UNSUPPORTED_STATE
+    namespace: REPO_
+    description: Repository is in a state (e.g. detached, conflicted, unsupported object format) the harness does not support.
+    minimum_required: true
+
+  - code: TOOL_INVALID_REQUEST
+    namespace: TOOL_
+    description: Tool invocation request failed schema/effect/resource validation before execution.
+    minimum_required: true
+  - code: TOOL_STALE_PREIMAGE
+    namespace: TOOL_
+    description: A patch/tool request's declared preimage no longer matches current on-disk content.
+    minimum_required: true
+  - code: TOOL_TIMEOUT
+    namespace: TOOL_
+    description: Tool execution exceeded its allotted time budget and was terminated.
+    minimum_required: true
+  - code: TOOL_CANCELLED
+    namespace: TOOL_
+    description: Tool execution was cancelled before completion.
+    minimum_required: true
+  - code: TOOL_PARTIAL_EFFECT_RECONCILIATION_REQUIRED
+    namespace: TOOL_
+    description: Tool execution left a partial side effect whose outcome must be reconciled before continuation.
+    minimum_required: true
+
+  - code: VERIFY_FAILED
+    namespace: VERIFY_
+    description: A required verification check produced a FAIL status.
+    minimum_required: true
+  - code: VERIFY_INCONCLUSIVE
+    namespace: VERIFY_
+    description: A required verification check could not reach a determinate PASS/FAIL outcome.
+    minimum_required: true
+  - code: VERIFY_STALE_EVIDENCE
+    namespace: VERIFY_
+    description: Verification evidence is bound to a candidate/config/policy/tool-schema identity that has since changed.
+    minimum_required: true
+  - code: VERIFY_WAIVER_REQUIRED
+    namespace: VERIFY_
+    description: Closure requires an explicit policy-authorized waiver that has not been supplied.
+    minimum_required: true
+
+  - code: RECOVERY_EXTERNAL_DRIFT
+    namespace: RECOVERY_
+    description: Persisted state and live repository/environment state have diverged in a way recovery cannot safely reconcile automatically.
+    minimum_required: true
+  - code: RECOVERY_AMBIGUOUS_EFFECT
+    namespace: RECOVERY_
+    description: Recovery cannot determine whether an interrupted side effect completed, so it is treated as unresolved rather than replayed.
+    minimum_required: true
+
+  - code: PERSIST_CORRUPT
+    namespace: PERSIST_
+    description: Persisted state failed an integrity check and is treated as corrupt rather than partially trusted.
+    minimum_required: true
+  - code: PERSIST_MIGRATION_REQUIRED
+    namespace: PERSIST_
+    description: Persisted schema version is older than the running harness's required migration baseline.
+    minimum_required: true
+
+  - code: SANDBOX_UNENFORCEABLE_SCOPE
+    namespace: SANDBOX_
+    description: Requested sandbox/network/resource scope cannot be enforced by the available backend, so it is blocked rather than widened.
+    minimum_required: true
+
+  - code: CLI_APPROVAL_UNAVAILABLE
+    namespace: CLI_
+    description: CLI command required an interactive/out-of-band approval that is unavailable in this invocation context.
+    minimum_required: true
+  - code: CLI_UNSUPPORTED_CAPABILITY
+    namespace: CLI_
+    description: CLI command targets a capability this build/platform does not support.
+    minimum_required: true
+
+  - code: INTERNAL_INVARIANT_VIOLATION
+    namespace: INTERNAL_
+    description: An internal invariant the implementation depends on was violated; treated as a defect, never silently downgraded.
+    minimum_required: true

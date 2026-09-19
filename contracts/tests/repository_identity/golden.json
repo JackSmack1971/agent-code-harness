@@ -1,0 +1,25 @@
+{
+  "contract": "RepositoryIdentity",
+  "version": 1,
+  "fixtures": [
+    {"name": "clean", "supported": true},
+    {"name": "modified", "supported": true},
+    {"name": "staged", "supported": true},
+    {"name": "partially_staged", "supported": true},
+    {"name": "untracked", "supported": true},
+    {"name": "ignored", "supported": true},
+    {"name": "symlink", "supported": "platform-dependent"},
+    {"name": "executable_bit", "supported": true},
+    {"name": "rename", "supported": true},
+    {"name": "deleted_staged", "supported": true},
+    {"name": "intent_to_add", "supported": true},
+    {"name": "merge_conflict", "supported": true},
+    {"name": "submodule_clean", "supported": true},
+    {"name": "submodule_dirty", "supported": true},
+    {"name": "detached_head", "supported": true},
+    {"name": "unborn_branch", "supported": true},
+    {"name": "sparse_checkout", "supported": true},
+    {"name": "non_utf8_path", "supported": "platform-dependent"},
+    {"name": "case_collision_manifest", "supported": "platform-dependent"}
+  ]
+}

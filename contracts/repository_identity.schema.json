@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-coding-harness.dev/contracts/repository_identity.schema.json",
+  "x-contract-name": "RepositoryIdentity",
+  "x-contract-version": 1,
+  "title": "RepositoryIdentity v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["repository_root_identity", "git_common_dir_identity", "object_algorithm", "head_commit", "head_ref", "index_digest", "tracked_worktree_digest", "untracked_manifest_digest", "submodule_manifest_digest", "sparse_checkout", "is_dirty", "digest"],
+  "properties": {
+    "repository_root_identity": {"type": "string", "minLength": 1},
+    "git_common_dir_identity": {"type": "string", "minLength": 1},
+    "object_algorithm": {"enum": ["sha1", "sha256"]},
+    "head_commit": {"anyOf": [{"$ref": "semantic_types.schema.json#/$defs/GitOid"}, {"type": "null"}]},
+    "head_ref": {"anyOf": [{"type": "string", "minLength": 1}, {"type": "null"}]},
+    "index_digest": {"$ref": "semantic_types.schema.json#/$defs/Digest"},
+    "tracked_worktree_digest": {"$ref": "semantic_types.schema.json#/$defs/Digest"},
+    "untracked_manifest_digest": {"$ref": "semantic_types.schema.json#/$defs/Digest"},
+    "submodule_manifest_digest": {"$ref": "semantic_types.schema.json#/$defs/Digest"},
+    "sparse_checkout": {"$ref": "#/$defs/SparseCheckoutIdentity"},
+    "is_dirty": {"type": "boolean"},
+    "digest": {"$ref": "semantic_types.schema.json#/$defs/Digest"}
+  },
+  "$defs": {
+    "PathBytes": {
+      "type": "object", "additionalProperties": false,
+      "required": ["encoding", "value"],
+      "properties": {"encoding": {"enum": ["utf8", "base64url"]}, "value": {"type": "string", "minLength": 1}}
+    },
+    "SparseCheckoutIdentity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["enabled", "cone", "patterns_digest"],
+      "properties": {"enabled": {"type": "boolean"}, "cone": {"anyOf": [{"type": "boolean"}, {"type": "null"}]}, "patterns_digest": {"anyOf": [{"$ref": "semantic_types.schema.json#/$defs/Digest"}, {"type": "null"}]}}
+    }
+  }
+}

@@ -1,0 +1,10 @@
+schema: RepositoryIdentity
+version: 1
+authority:
+  path_encoding: git_path_bytes
+  invalid_utf8_encoding: base64url
+  oid_format: [sha1, sha256]
+  ignored_files: excluded_from_identity
+  timestamps: excluded
+  dirty_states: [CLEAN_BASE, CAPTURE_DIRTY_STATE, BLOCK_DIRTY_STATE]
+  candidate_identity: exact_materialized_contents

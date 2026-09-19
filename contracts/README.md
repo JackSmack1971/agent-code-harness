@@ -237,3 +237,15 @@ path (native fs/process/search tools, the container backend, live approval
 persistence) remains Phase 2/3 work.
 
 Offline conformance tests live in `../tests/` and run with `uv run pytest`.
+
+Phase 0G scope (RepositoryIdentity v1):
+
+- `repository_identity.schema.json` / `repository_identity.yaml` — the sole
+  machine-readable authority for tagged Git OIDs, Git path-byte encoding,
+  committed/index/materialized/untracked/submodule/sparse-checkout identity,
+  explicit dirty-state choices, and exact candidate snapshot identity.
+- `src/agentic_harness/_repository_identity.py` captures the byte-oriented
+  Git state through deterministic argv calls and computes every digest through
+  `_canonical.py`. `WorkspaceOverlay` retains exact tracked and untracked
+  bytes for isolated-worktree replay; unsupported case collisions and
+  platform-unrepresentable paths fail closed.

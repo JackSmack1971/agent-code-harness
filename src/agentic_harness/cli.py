@@ -18,9 +18,13 @@ import yaml
 from jsonschema import Draft202012Validator
 
 from agentic_harness import __version__
+from agentic_harness._canonical import canonical_json_bytes
 from agentic_harness._config import ConfigError, compute_config_digest, resolve_configuration_from_files
 from agentic_harness._contracts import find_contracts_root, find_research_record, load_contract_set, load_json
+from agentic_harness._domain_schemas import compute_identity_digest, validate_record
+from agentic_harness._events import make_event
 from agentic_harness._identity import uuid7_str
+from agentic_harness._persistence import SQLiteStore
 from agentic_harness._reason_codes import CommandStatus, ExitClass
 
 app = typer.Typer(name="harness", help="Agentic Coding Harness CLI.", no_args_is_help=True, add_completion=False)
@@ -65,7 +69,7 @@ def _validate_envelope(envelope: dict[str, Any]) -> None:
     Draft202012Validator(load_json(root / "cli_protocol.schema.json")).validate(envelope)
     if not isinstance(envelope.get("data"), dict):
         return
-    command_file = {"doctor": "doctor", "run": "run", "status": "status", "resume": "resume", "accept": "accept", "reject": "reject", "inspect": "inspect", "config validate": "config_validate", "contracts check": "contracts_check"}.get(envelope["command"])
+    command_file = {"doctor": "doctor", "run": "run", "status": "status", "resume": "resume", "accept": "accept", "reject": "reject", "cancel": "cancel", "inspect": "inspect", "config validate": "config_validate", "contracts check": "contracts_check"}.get(envelope["command"])
     if command_file:
         path = root / "cli_protocol" / "data" / f"{command_file}.schema.json"
         if path.is_file():
@@ -118,14 +122,23 @@ def _db_path(repo: Path) -> Path:
     return repo / ".harness" / "state.sqlite3"
 
 
-def _open_db(repo: Path, *, create: bool = False) -> sqlite3.Connection:
+def _open_db(repo: Path, *, create: bool = False) -> SQLiteStore:
     path = _db_path(repo)
     if create:
         path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(path)
-    conn.row_factory = sqlite3.Row
-    conn.execute("CREATE TABLE IF NOT EXISTS harness_runs (run_id TEXT PRIMARY KEY, state TEXT NOT NULL, run_version INTEGER NOT NULL, objective TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, reject_reason TEXT)")
-    return conn
+    return SQLiteStore(path)
+
+
+def _new_goal(objective: str, now: str) -> dict[str, Any]:
+    goal = {
+        "schema_name": "GoalContract", "schema_version": 1,
+        "goal_id": uuid7_str(), "goal_revision_id": uuid7_str(), "parent_revision_id": None,
+        "intent": objective, "desired_outcome": objective, "constraints": [],
+        "acceptance_criteria": [], "uncertainties": [], "created_at": now, "source": "USER",
+        "digest": "sha256:" + "0" * 64,
+    }
+    goal["digest"] = compute_identity_digest("GoalContract", goal)
+    return goal
 
 
 @app.command()
@@ -138,17 +151,36 @@ def run(objective: str | None = typer.Argument(None), objective_file: Path | Non
             raise ValueError("objective must not be empty")
         run_id = uuid7_str()
         now = dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z")
-        conn = _open_db(repo.resolve(), create=True)
-        conn.execute("INSERT INTO harness_runs VALUES(?,?,?,?,?,?,?)", (run_id, "CREATED", 0, text_value, now, now, None))
-        conn.commit(); conn.close()
-        _finish(_envelope("run", CommandStatus.SUCCESS, "CLI_RUN_CREATED", "Run created; execution is ready for the deterministic runtime.", run_id=run_id, state="CREATED", data={"run_id": run_id, "state": "CREATED", "goal_revision_id": None, "blocker": None}), json_output)
-    except (OSError, ValueError) as exc:
+        goal = _new_goal(text_value, now)
+        validate_record("GoalContract", goal)
+        run_record = {"schema_name": "RunRecord", "schema_version": 1, "run_id": run_id, "state": "CREATED", "run_version": 0,
+            "goal_revision_id": goal["goal_revision_id"], "change_revision_id": None, "repository_snapshot_digest": None,
+            "candidate_snapshot_digest": None, "config_digest": None, "policy_digest": None, "resume_target_state": None,
+            "created_at": now, "updated_at": now, "digest": "sha256:" + "0" * 64}
+        run_record["digest"] = compute_identity_digest("RunRecord", run_record)
+        store = _open_db(repo.resolve(), create=True); conn = store.conn
+        conn.execute("BEGIN IMMEDIATE")
+        conn.execute("INSERT INTO goals(goal_id,created_at) VALUES(?,?)", (goal["goal_id"], now))
+        conn.execute("INSERT INTO goal_revisions(goal_revision_id,goal_id,parent_revision_id,canonical_json,digest,created_at) VALUES(?,?,?,?,?,?)", (goal["goal_revision_id"], goal["goal_id"], None, canonical_json_bytes(goal).decode(), goal["digest"], now))
+        conn.execute("INSERT INTO runs(run_id,state,run_version,goal_revision_id,change_revision_id,repository_snapshot_digest,candidate_snapshot_digest,config_digest,policy_digest,resume_target_state,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", (run_id, "CREATED", 0, goal["goal_revision_id"], None, None, None, None, None, None, now, now))
+        conn.commit(); store.close()
+        _finish(_envelope("run", CommandStatus.SUCCESS, "CLI_RUN_CREATED", "Run created; execution is ready for the deterministic runtime.", run_id=run_id, state="CREATED", data={"run_id": run_id, "state": "CREATED", "goal_revision_id": goal["goal_revision_id"], "blocker": None}), json_output)
+    except (OSError, ValueError, sqlite3.Error) as exc:
         _finish(_envelope("run", CommandStatus.INVALID, "CLI_INVALID_USAGE", str(exc)), json_output)
 
 
-def _get_run(repo: Path, run_id: str) -> tuple[sqlite3.Connection, sqlite3.Row | None]:
-    conn = _open_db(repo)
-    return conn, conn.execute("SELECT * FROM harness_runs WHERE run_id=?", (run_id,)).fetchone()
+def _get_run(repo: Path, run_id: str) -> tuple[SQLiteStore, sqlite3.Row | None]:
+    store = _open_db(repo)
+    return store, store.conn.execute("SELECT * FROM runs WHERE run_id=?", (run_id,)).fetchone()
+
+
+def _interrupt(store: SQLiteStore, run_id: str, reason: str) -> None:
+    row = store.conn.execute("SELECT COALESCE(MAX(sequence), 0) FROM events WHERE run_id=?", (run_id,)).fetchone()
+    sequence = int(row[0]) + 1
+    event = make_event(run_id=run_id, sequence=sequence, event_type="run.interrupted", payload={"reason": reason}, actor_type="SYSTEM")
+    def mutation(conn: sqlite3.Connection) -> None:
+        conn.execute("UPDATE runs SET state='INTERRUPTED', run_version=run_version+1, updated_at=? WHERE run_id=?", (dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z"), run_id))
+    store.mutate_with_event(mutation, event)
 
 
 @app.command()
@@ -181,8 +213,26 @@ def reject(run_id: str, reason: str = typer.Option("", "--reason"), repo: Path =
     elif row["state"] in {"ACCEPTED", "FAILED"}:
         conn.close(); _finish(_envelope("reject", CommandStatus.INVALID, "STATE_INVALID_TRANSITION", "Terminal run cannot be rejected.", run_id=run_id, state=row["state"]), json_output)
     else:
-        conn.execute("UPDATE harness_runs SET state='REJECTED', run_version=run_version+1, reject_reason=? WHERE run_id=?", (reason, run_id)); conn.commit(); code = "CLI_REJECTED"
+        conn.conn.execute("BEGIN IMMEDIATE")
+        conn.conn.execute("UPDATE runs SET state='REJECTED', run_version=run_version+1, updated_at=? WHERE run_id=?", (dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00", "Z"), run_id))
+        conn.conn.commit(); code = "CLI_REJECTED"
     conn.close(); _finish(_envelope("reject", CommandStatus.SUCCESS, code, "Run rejected.", run_id=run_id, state="REJECTED", data={"terminal_state": "REJECTED", "reason_artifact": None}), json_output)
+
+
+@app.command()
+def cancel(run_id: str, repo: Path = typer.Option(Path.cwd(), "--repo"), json_output: bool = typer.Option(False, "--json")) -> None:
+    store, row = _get_run(repo.resolve(), run_id)
+    if row is None:
+        store.close(); _finish(_envelope("cancel", CommandStatus.INVALID, "CLI_RUN_NOT_FOUND", "Run was not found.", run_id=run_id), json_output)
+    if row["state"] == "INTERRUPTED":
+        store.close(); _finish(_envelope("cancel", CommandStatus.SUCCESS, "CLI_ALREADY_INTERRUPTED", "Run was already interrupted.", run_id=run_id, state="INTERRUPTED", data={"state": "INTERRUPTED", "checkpointed": True}), json_output)
+    if row["state"] in {"ACCEPTED", "REJECTED", "FAILED"}:
+        store.close(); _finish(_envelope("cancel", CommandStatus.INVALID, "STATE_INVALID_TRANSITION", "Terminal run cannot be interrupted.", run_id=run_id, state=row["state"]), json_output)
+    try:
+        _interrupt(store, run_id, "operator cancellation")
+    except Exception as exc:
+        store.close(); _finish(_envelope("cancel", CommandStatus.CORRUPT, "PERSIST_CORRUPT", str(exc), run_id=run_id), json_output)
+    store.close(); _finish(_envelope("cancel", CommandStatus.INTERRUPTED, "TOOL_CANCELLED", "Run interrupted at a durable checkpoint.", run_id=run_id, state="INTERRUPTED", data={"state": "INTERRUPTED", "checkpointed": True}), json_output)
 
 
 @app.command()

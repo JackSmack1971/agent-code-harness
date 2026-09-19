@@ -195,18 +195,45 @@ def evaluate_criterion(
 def evaluate_ready_for_user(
     criteria: list[Mapping[str, Any]], evaluations: Mapping[str, CriterionEvaluation],
     *, candidate_snapshot: str | None, manifest_candidate_snapshot: str | None,
-    intent_review_status: str | None, manifest_digest: str | None,
+    intent_review_status: str | Mapping[str, Any] | None, manifest_digest: str | None,
 ) -> bool:
     """Evaluate the complete READY_FOR_USER gate, without orchestration shortcuts."""
     if not candidate_snapshot or candidate_snapshot != manifest_candidate_snapshot or not manifest_digest:
         return False
-    if intent_review_status != "PASS":
+    if isinstance(intent_review_status, Mapping):
+        review = evaluate_intent_review(intent_review_status, candidate_snapshot=candidate_snapshot, required_criterion_ids={str(c["criterion_id"]) for c in criteria if c.get("mandatory", True)})
+        if review.status != CHECK_PASS:
+            return False
+    elif intent_review_status != "PASS":
         return False
     return all(evaluations.get(str(c["criterion_id"]), CriterionEvaluation("", "INCONCLUSIVE", {})).evaluation in {"SATISFIED", "WAIVED"} for c in criteria if c.get("mandatory", True))
 
 
 def evaluate_accepted(*, destination_reconciled: bool, integration_status: str, landed_destination_identity: str | None, post_integration: list[str]) -> bool:
     return bool(destination_reconciled and integration_status == "COMPLETED" and landed_destination_identity and post_integration and all(status in {CHECK_PASS, CHECK_NOT_APPLICABLE} for status in post_integration))
+
+
+def evaluate_intent_review(
+    review: Mapping[str, Any], *, candidate_snapshot: str | None,
+    required_criterion_ids: set[str], reviewer_available: bool = True,
+    required_route: str | None = None, implementer_context_digest: str | None = None,
+) -> CheckExecution:
+    """Evaluate independent intent-review evidence without trusting narration."""
+    if not reviewer_available:
+        return CheckExecution(CHECK_INCONCLUSIVE, REASON_VERIFY_REVIEWER_UNAVAILABLE)
+    if review.get("overall_status") != "PASS":
+        return CheckExecution(CHECK_FAIL, REASON_VERIFY_FAILED)
+    if candidate_snapshot is None or review.get("candidate_snapshot") != candidate_snapshot:
+        return CheckExecution(CHECK_INCONCLUSIVE, REASON_VERIFY_STALE)
+    if required_route is not None and review.get("reviewer_route") != required_route:
+        return CheckExecution(CHECK_FAIL, REASON_VERIFY_FAILED)
+    context_digest = review.get("independence_context_digest")
+    if not context_digest or (implementer_context_digest is not None and context_digest == implementer_context_digest):
+        return CheckExecution(CHECK_INCONCLUSIVE, REASON_VERIFY_REVIEWER_UNAVAILABLE)
+    criterion_results = {str(item.get("criterion_id")): item.get("status") for item in review.get("criterion_results", [])}
+    if set(criterion_results) != required_criterion_ids or any(criterion_results.get(item) != "PASS" for item in required_criterion_ids):
+        return CheckExecution(CHECK_FAIL, REASON_VERIFY_FAILED)
+    return CheckExecution(CHECK_PASS)
 
 
 def post_integration_reuse_allowed(check: Mapping[str, Any], *, candidate_tree_digest: str, landed_tree_digest: str) -> bool:

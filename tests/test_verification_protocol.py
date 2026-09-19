@@ -11,6 +11,7 @@ from agentic_harness._verification import (
     evaluate_criterion,
     execute_check,
     post_integration_reuse_allowed,
+    evaluate_intent_review,
     result_is_current,
 )
 
@@ -50,3 +51,10 @@ def test_post_integration_reuse_requires_exact_landed_tree_and_safe_dependencies
     check = {"check_type": "FOCUSED", "identity_dependencies": ["CANDIDATE_SNAPSHOT"]}
     assert post_integration_reuse_allowed(check, candidate_tree_digest="sha256:x", landed_tree_digest="sha256:x")
     assert not post_integration_reuse_allowed({"check_type": "FOCUSED", "identity_dependencies": ["DESTINATION_SNAPSHOT"]}, candidate_tree_digest="sha256:x", landed_tree_digest="sha256:x")
+
+
+def test_intent_review_requires_fresh_independent_context_and_exact_candidate() -> None:
+    review = {"overall_status": "PASS", "candidate_snapshot": "sha256:c", "reviewer_route": "reviewer", "reviewer_model_identity": "m", "independence_context_digest": "sha256:review", "criterion_results": [{"criterion_id": "c", "status": "PASS"}]}
+    assert evaluate_intent_review(review, candidate_snapshot="sha256:c", required_criterion_ids={"c"}).status == CHECK_PASS
+    assert evaluate_intent_review(review, candidate_snapshot="sha256:c", required_criterion_ids={"c"}, implementer_context_digest="sha256:review").status == CHECK_INCONCLUSIVE
+    assert evaluate_intent_review(review, candidate_snapshot="sha256:other", required_criterion_ids={"c"}).status == CHECK_INCONCLUSIVE

@@ -102,6 +102,22 @@ def test_overlay_captures_exact_bytes(repo: Path) -> None:
     assert overlay.record()["source_snapshot"] == snapshot.digest
 
 
+def test_overlay_replay_reconstructs_snapshot_components(repo: Path) -> None:
+    base = capture_repository_snapshot(repo)
+    (repo / "tracked.txt").write_bytes(b"staged exact")
+    git(repo, "add", "tracked.txt")
+    (repo / "untracked.bin").write_bytes(b"\x00exact")
+    source = capture_repository_snapshot(repo)
+    overlay = WorkspaceOverlay.capture(source)
+    target = repo.parent / "replay-target"
+    subprocess.run(["git", "clone", "-q", str(repo), str(target)], check=True, capture_output=True)
+    overlay.replay(target, base_commit=base.head_commit.split(":", 1)[1] if base.head_commit else None)
+    replayed = capture_repository_snapshot(target)
+    assert replayed.index_digest == source.index_digest
+    assert replayed.tracked_worktree_digest == source.tracked_worktree_digest
+    assert replayed.untracked_manifest_digest == source.untracked_manifest_digest
+
+
 def test_rename_deleted_and_intent_to_add_are_state_based(repo: Path) -> None:
     git(repo, "mv", "tracked.txt", "renamed.txt")
     (repo / "planned.txt").write_bytes(b"planned")

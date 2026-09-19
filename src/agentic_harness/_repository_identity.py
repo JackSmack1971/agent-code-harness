@@ -311,35 +311,52 @@ class WorkspaceOverlay:
     index_entries: tuple[IndexEntry, ...]
     tracked_bytes: tuple[tuple[bytes, bytes | None], ...]
     untracked_bytes: tuple[tuple[bytes, bytes], ...]
+    tracked_kinds: tuple[tuple[bytes, str], ...] = ()
+    tracked_modes: tuple[tuple[bytes, str | None], ...] = ()
+    untracked_kinds: tuple[tuple[bytes, str], ...] = ()
+    untracked_modes: tuple[tuple[bytes, str | None], ...] = ()
 
     @classmethod
     def capture(cls, snapshot: RepositorySnapshot) -> WorkspaceOverlay:
         root = Path(snapshot.repository_root_identity)
         tracked: list[tuple[bytes, bytes | None]] = []
+        tracked_kinds: list[tuple[bytes, str]] = []
+        tracked_modes: list[tuple[bytes, str | None]] = []
         for entry in snapshot.tracked_entries:
             path = os.fsdecode(os.fsencode(root) + os.sep.encode() + entry.path_bytes)
-            if entry.missing:
+            tracked_kinds.append((entry.path_bytes, entry.entry_type))
+            tracked_modes.append((entry.path_bytes, entry.mode))
+            if entry.missing or entry.entry_type == "submodule":
                 tracked.append((entry.path_bytes, None))
             elif entry.entry_type == "symlink":
                 tracked.append((entry.path_bytes, os.fsencode(os.readlink(path))))
             else:
                 tracked.append((entry.path_bytes, Path(path).read_bytes()))
         untracked: list[tuple[bytes, bytes]] = []
+        untracked_kinds: list[tuple[bytes, str]] = []
+        untracked_modes: list[tuple[bytes, str | None]] = []
         for entry in snapshot.untracked_entries:
             path = os.fsdecode(os.fsencode(root) + os.sep.encode() + entry.path_bytes)
+            untracked_kinds.append((entry.path_bytes, entry.entry_type))
+            untracked_modes.append((entry.path_bytes, entry.mode))
             if entry.entry_type == "symlink":
                 data = os.fsencode(os.readlink(path))
             else:
                 data = Path(path).read_bytes()
             untracked.append((entry.path_bytes, data))
-        return cls(snapshot.digest, snapshot.index_entries, tuple(tracked), tuple(untracked))
+        return cls(snapshot.digest, snapshot.index_entries, tuple(tracked), tuple(untracked),
+                   tuple(tracked_kinds), tuple(tracked_modes), tuple(untracked_kinds), tuple(untracked_modes))
 
     def record(self) -> dict[str, object]:
         encode = lambda data: None if data is None else base64.urlsafe_b64encode(data).decode("ascii").rstrip("=")
         return {"source_snapshot": self.source_snapshot,
                 "index_entries": [e.record() for e in self.index_entries],
                 "tracked_bytes": [{"path_bytes": _path_value(p), "base64url": encode(b)} for p, b in self.tracked_bytes],
-                "untracked_bytes": [{"path_bytes": _path_value(p), "base64url": encode(b)} for p, b in self.untracked_bytes]}
+                "untracked_bytes": [{"path_bytes": _path_value(p), "base64url": encode(b)} for p, b in self.untracked_bytes],
+                "tracked_kinds": [{"path_bytes": _path_value(p), "entry_type": k} for p, k in self.tracked_kinds],
+                "tracked_modes": [{"path_bytes": _path_value(p), "mode": m} for p, m in self.tracked_modes],
+                "untracked_kinds": [{"path_bytes": _path_value(p), "entry_type": k} for p, k in self.untracked_kinds],
+                "untracked_modes": [{"path_bytes": _path_value(p), "mode": m} for p, m in self.untracked_modes]}
 
     def replay(self, target_root: str | os.PathLike[str], *, base_commit: str | None) -> None:
         """Replay exact bytes and index stages into an already-created base worktree.
@@ -350,7 +367,9 @@ class WorkspaceOverlay:
         """
         target = Path(target_root).resolve()
         if base_commit:
-            _run(target, "read-tree", "-u", base_commit)
+            _run(target, "read-tree", "--reset", "-u", base_commit)
+        kind_map = dict(self.tracked_kinds) | dict(self.untracked_kinds)
+        mode_map = dict(self.tracked_modes) | dict(self.untracked_modes)
         for path_bytes, data in self.tracked_bytes + self.untracked_bytes:
             target_path = os.fsdecode(os.fsencode(target) + os.sep.encode() + path_bytes)
             if data is None:
@@ -360,15 +379,32 @@ class WorkspaceOverlay:
                     pass
                 continue
             Path(target_path).parent.mkdir(parents=True, exist_ok=True)
-            # Symlink payloads are represented separately by the source
-            # manifest; ordinary overlay bytes are regular-file content.
-            Path(target_path).write_bytes(data)
+            try:
+                os.unlink(target_path)
+            except FileNotFoundError:
+                pass
+            if kind_map.get(path_bytes) == "symlink":
+                os.symlink(os.fsdecode(data), target_path)
+            elif kind_map.get(path_bytes) != "submodule":
+                Path(target_path).write_bytes(data)
+                mode = mode_map.get(path_bytes)
+                if mode == "100755":
+                    os.chmod(target_path, 0o755)
         if self.index_entries:
+            desired_paths = {entry.path_bytes for entry in self.index_entries}
+            existing = _run(target, "ls-files", "-z").split(b"\0")
+            for old_path in (p for p in existing if p and p not in desired_paths):
+                subprocess.run(["git", "update-index", "--force-remove", "--", os.fsdecode(old_path)], cwd=target, check=True)
+            algorithm = _run(target, "rev-parse", "--show-object-format").strip().decode("ascii")
+            zero_oid = "0" * (64 if algorithm == "sha256" else 40)
             lines = []
             for entry in self.index_entries:
-                oid = entry.object_oid.split(":", 1)[1] if entry.object_oid else "0" * 40
+                oid = entry.object_oid.split(":", 1)[1] if entry.object_oid else zero_oid
                 lines.append(f"{entry.mode} {oid} {entry.stage}\t".encode("ascii") + entry.path_bytes + b"\n")
             subprocess.run(["git", "update-index", "--index-info"], cwd=target, input=b"".join(lines), check=True)
+            for entry in self.index_entries:
+                if entry.intent_to_add:
+                    subprocess.run(["git", "update-index", "--intent-to-add", "--", os.fsdecode(entry.path_bytes)], cwd=target, check=True)
 
 
 class RepositoryIdentity:

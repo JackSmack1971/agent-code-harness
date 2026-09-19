@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-coding-harness.dev/contracts/cli_protocol/data/doctor.schema.json",
+  "x-contract-name": "CLIDoctorData",
+  "x-contract-version": 1,
+  "type": "object", "additionalProperties": false,
+  "required": ["checks", "contracts_root"],
+  "properties": {"checks": {"type": "array"}, "contracts_root": {"type": "string"}}
+}

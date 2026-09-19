@@ -132,6 +132,14 @@ codes:
     namespace: VERIFY_
     description: Closure requires an explicit policy-authorized waiver that has not been supplied.
     minimum_required: true
+  - code: VERIFY_REVIEWER_UNAVAILABLE
+    namespace: VERIFY_
+    description: Required independent intent reviewer was unavailable, so the gate is inconclusive.
+    minimum_required: false
+  - code: VERIFY_INVALID_MECHANISM
+    namespace: VERIFY_
+    description: Verification requested an unknown or malformed typed check mechanism.
+    minimum_required: false
 
   - code: RECOVERY_EXTERNAL_DRIFT
     namespace: RECOVERY_
@@ -164,6 +172,14 @@ codes:
     namespace: CLI_
     description: CLI command targets a capability this build/platform does not support.
     minimum_required: true
+  - code: CLI_INVALID_USAGE
+    namespace: CLI_
+    description: CLI arguments or command input violate the machine command contract.
+    minimum_required: false
+  - code: CLI_RUN_NOT_FOUND
+    namespace: CLI_
+    description: Requested run identity is not present in authoritative persistence.
+    minimum_required: false
 
   - code: INTERNAL_INVARIANT_VIOLATION
     namespace: INTERNAL_

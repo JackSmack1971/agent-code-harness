@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-coding-harness.dev/contracts/cli_protocol.schema.json",
+  "x-contract-name": "CLIProtocol",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol", "protocol_version", "command", "status", "symbolic_code", "run_id", "state", "message", "data"],
+  "properties": {
+    "protocol": {"const": "harness.cli"},
+    "protocol_version": {"const": 1},
+    "command": {"type": "string", "minLength": 1},
+    "status": {"enum": ["SUCCESS", "INVALID", "APPROVAL_REQUIRED", "POLICY_DENIED", "VERIFICATION_FAILED", "INCONCLUSIVE", "CORRUPT", "INTEGRATION_CONFLICT", "INTERRUPTED", "UNSUPPORTED", "EXTERNAL_FAILURE", "INTERNAL_FAILURE"]},
+    "symbolic_code": {"type": "string", "minLength": 1},
+    "run_id": {"type": ["string", "null"]},
+    "state": {"type": ["string", "null"]},
+    "message": {"type": "string"},
+    "data": {}
+  }
+}

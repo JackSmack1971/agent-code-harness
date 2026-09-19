@@ -1,0 +1,5 @@
+[
+  {"case":"all_established","mode":"ALL","states":["ESTABLISHED","ESTABLISHED"],"expected":"SATISFIED"},
+  {"case":"any_requires_established","mode":"ANY","states":["WAIVED","ESTABLISHED"],"expected":"SATISFIED"},
+  {"case":"threshold_waiver_opt_in","mode":"THRESHOLD","states":["ESTABLISHED","WAIVED"],"threshold":2,"allow_waiver":true,"expected":"SATISFIED"}
+]

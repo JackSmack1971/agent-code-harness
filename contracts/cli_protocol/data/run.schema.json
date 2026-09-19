@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-coding-harness.dev/contracts/cli_protocol/data/run.schema.json",
+  "x-contract-name": "CLIRunData",
+  "x-contract-version": 1,
+  "type": "object", "additionalProperties": false,
+  "required": ["run_id", "state", "goal_revision_id", "blocker"],
+  "properties": {"run_id": {"type": "string"}, "state": {"type": "string"}, "goal_revision_id": {"type": ["string", "null"]}, "blocker": {"type": ["string", "null"]}}
+}

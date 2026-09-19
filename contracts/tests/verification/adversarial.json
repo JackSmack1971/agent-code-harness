@@ -1,0 +1,5 @@
+[
+  {"case":"all_disproven","mode":"ALL","states":["ESTABLISHED","DISPROVEN"],"expected":"UNSATISFIED"},
+  {"case":"any_waived_only","mode":"ANY","states":["WAIVED","INCONCLUSIVE"],"expected":"INCONCLUSIVE"},
+  {"case":"threshold_waiver_without_opt_in","mode":"THRESHOLD","states":["ESTABLISHED","WAIVED"],"threshold":2,"allow_waiver":false,"expected":"INCONCLUSIVE"}
+]

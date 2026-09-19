@@ -114,6 +114,75 @@ def test_rename_deleted_and_intent_to_add_are_state_based(repo: Path) -> None:
     assert next(e for e in snapshot.index_entries if e.path_bytes == b"planned.txt").intent_to_add
 
 
+def test_merge_conflict_preserves_all_index_stages(repo: Path) -> None:
+    git(repo, "checkout", "-qb", "side")
+    (repo / "tracked.txt").write_bytes(b"side\n")
+    git(repo, "commit", "-qam", "side")
+    git(repo, "checkout", "-q", "master")
+    (repo / "tracked.txt").write_bytes(b"main\n")
+    git(repo, "commit", "-qam", "main")
+    git(repo, "merge", "side", check=False)
+    snapshot = capture_repository_snapshot(repo)
+    stages = [e.stage for e in snapshot.index_entries if e.path_bytes == b"tracked.txt"]
+    assert stages == [1, 2, 3]
+
+
+def test_sparse_checkout_identity_binds_mode_and_patterns(repo: Path) -> None:
+    (repo / "keep.txt").write_bytes(b"keep")
+    (repo / "omit.txt").write_bytes(b"omit")
+    git(repo, "add", "keep.txt", "omit.txt")
+    git(repo, "commit", "-qm", "files")
+    git(repo, "sparse-checkout", "init", "--no-cone")
+    git(repo, "sparse-checkout", "set", "keep.txt")
+    snapshot = capture_repository_snapshot(repo)
+    assert snapshot.sparse_checkout.enabled is True
+    assert snapshot.sparse_checkout.cone is False
+    assert snapshot.sparse_checkout.patterns_digest is not None
+
+
+def test_submodule_manifest_binds_gitlink_and_nested_dirty_state(repo: Path) -> None:
+    nested = repo.parent / "nested-source"
+    nested.mkdir()
+    git(nested, "init", "-q")
+    git(nested, "config", "user.email", "test@example.invalid")
+    git(nested, "config", "user.name", "Test")
+    (nested / "file").write_text("one", encoding="utf-8")
+    git(nested, "add", "file")
+    git(nested, "commit", "-qm", "nested")
+    subprocess.run(["git", "-c", "protocol.file.allow=always", "submodule", "add", str(nested), "sub"], cwd=repo, check=True, capture_output=True)
+    git(repo, "commit", "-qm", "submodule")
+    clean = capture_repository_snapshot(repo)
+    (repo / "sub" / "file").write_text("two", encoding="utf-8")
+    dirty = capture_repository_snapshot(repo)
+    assert dirty.submodule_manifest_digest != clean.submodule_manifest_digest
+
+
+def test_non_utf8_path_uses_explicit_encoding_or_fails_closed(repo: Path) -> None:
+    if os.name == "nt":
+        pytest.skip("Windows cannot materialize non-UTF-8 filenames")
+    path = os.fsdecode(b"non-utf8-\xff")
+    (repo / path).write_bytes(b"bytes")
+    git(repo, "add", "--", path)
+    snapshot = capture_repository_snapshot(repo)
+    encoded = next(e for e in snapshot.index_entries if e.path_bytes.startswith(b"non-utf8-"))
+    assert encoded.record()["path_bytes"]["encoding"] == "base64url"
+
+
+def test_case_collision_is_rejected_on_case_insensitive_platform(repo: Path) -> None:
+    (repo / "Case").write_bytes(b"a")
+    (repo / "case").write_bytes(b"b")
+    if os.path.samefile(repo / "Case", repo / "case"):
+        pytest.skip("case-colliding names cannot coexist in this worktree")
+    git(repo, "add", "--", "Case", "case")
+    if os.path.normcase("A") == os.path.normcase("a"):
+        from agentic_harness._repository_identity import RepositoryUnsupportedState
+        with pytest.raises(RepositoryUnsupportedState):
+            capture_repository_snapshot(repo)
+    else:
+        snapshot = capture_repository_snapshot(repo)
+        assert {e.path_bytes for e in snapshot.index_entries} >= {b"Case", b"case"}
+
+
 def test_required_golden_fixture_inventory(repo_root: Path) -> None:
     fixture = json.loads((repo_root / "contracts/tests/repository_identity/golden.json").read_text())
     names = {item["name"] for item in fixture["fixtures"]}

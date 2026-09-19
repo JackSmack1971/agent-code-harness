@@ -257,8 +257,12 @@ def capture_repository_snapshot(repo_root: str | os.PathLike[str] = ".") -> Repo
     head_raw = _run(root, "rev-parse", "-q", "--verify", "HEAD", check=False).strip()
     head = _oid(head_raw, algorithm)
     index = _index_entries(root, algorithm)
-    tracked_paths = tuple(e.path_bytes for e in index if e.stage == 0)
-    tracked = tuple(_read_materialized(root, p) for p in sorted(tracked_paths))
+    tracked_index = tuple(e for e in index if e.stage == 0)
+    tracked = tuple(
+        MaterializedEntry(e.path_bytes, "submodule", "160000", e.object_oid)
+        if e.mode == "160000" else _read_materialized(root, e.path_bytes)
+        for e in sorted(tracked_index, key=lambda item: item.path_bytes)
+    )
     untracked = _untracked_entries(root)
     all_paths = [e.path_bytes for e in tracked] + [e.path_bytes for e in untracked]
     if os.path.normcase("A") == os.path.normcase("a"):

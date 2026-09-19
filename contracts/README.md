@@ -100,11 +100,50 @@ implicit:
    a mandated filesystem layout; every other Phase 0 contract in this
    repository is a single file per contract, and this one follows suit.
 
-Everything else named in the Phase-0 Contract Closure Gate (`StateMachine
-v1`, `EventRegistry v1`, `RecoveryProtocol v1`, `ResourceNormalization v1`,
-`SideEffectTransactionProtocol v1`, `CLIProtocol v1`, `PolicyContract v1`,
-`PersistenceSchema v1`, `ToolProtocol v1`, `VerificationProtocol v1`, etc.)
-is out of scope for this slice and MUST NOT be assumed to exist yet; see
+Phase 0D scope (current addition — deterministic state authority):
+
+- `state_machine.schema.json` / `state_machine.yaml` — `StateMachine v1`
+  (Blueprint 3.4, 9.8) **and** `RecoveryProtocol v1` (10.8) in a single
+  contract pair, per the Closure text ("`state_machine.yaml` MUST contain
+  `recovery_transitions` in addition to forward transitions"). The data file
+  is a literal transcription of Blueprint 9.8.3's forward transition table,
+  9.8.4's exceptional transitions, and 10.8.2's canonical recovery relation
+  — no transition or recovery rule is invented. The schema additionally
+  defines the `TransitionCommand` request shape (9.8.2), the
+  `RecoveryPlan`/`RecoveryProof` types (10.8.1), and a `ResumabilityPolicy`
+  $def that resolves the one genuinely underspecified point in 9.8.5 step 4
+  (which committed transitions count as a "resumability boundary") by
+  requiring a checkpoint after every committed transition — documented
+  explicitly here because it is non-narrowing (pure added durability, never
+  a relaxation of any invariant), the same kind of resolution the Phase 0C
+  section above records for its own two judgment calls.
+  `src/agentic_harness/_state_machine.py` is the sole runtime authority
+  permitted to decide a transition or resume request (INV-STATE-001): it
+  validates against this contract rather than a hand-maintained copy, checks
+  `expected_run_version` with optimistic concurrency before consulting the
+  relation, and hard-gates the two commands that target `READY_FOR_USER` and
+  `ACCEPTED` behind `INV-STATE-002`/`INV-ACCEPT-001` evidence (missing
+  evidence fails closed, so a caller cannot bypass either gate by omission).
+  `_invariants.inv_state_001` was rewired to call
+  `_state_machine.is_valid_transition` instead of the provisional
+  hand-transcribed table it carried before this contract existed (that table
+  has been deleted, per the comment it shipped with).
+  `RECOVERABLE_SOURCE_STATES` (`BLOCKED`, `INTERRUPTED`, `RECOVERY_REQUIRED`,
+  `RECONCILIATION_REQUIRED`, `INTEGRATION_CONFLICT`) are the only states
+  `authorize_resume` accepts; it never resolves a target to `ACCEPTED`
+  (10.8.2), and it is idempotent by construction (10.8.3) because it is a
+  pure function of its inputs — calling it again with an unchanged
+  unsatisfied-condition snapshot returns the identical rejection and the
+  same `blocker_reason_code`, with zero I/O either time.
+- `tests/state_machine/` — golden/adversarial fixtures for every forward
+  transition, every exceptional transition, and every recovery relation
+  (including all three `INTEGRATION_CONFLICT` dispositions).
+
+Everything else named in the Phase-0 Contract Closure Gate (`EventRegistry
+v1`, `ResourceNormalization v1`, `SideEffectTransactionProtocol v1`,
+`CLIProtocol v1`, `PolicyContract v1`, `PersistenceSchema v1`,
+`ToolProtocol v1`, `VerificationProtocol v1`, etc.) is out of scope for this
+slice and MUST NOT be assumed to exist yet; see
 `.claude/references/phase-registry.md`. `domain_schemas.schema.json` and
 `cross_contract_invariant_registry.yaml` reference those not-yet-materialized
 contracts only as documented structural carriers (`Effect`, `ResourcePattern`,

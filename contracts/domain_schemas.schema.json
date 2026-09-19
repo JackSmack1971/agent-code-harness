@@ -34,15 +34,8 @@
     "SchemaVersion": { "$ref": "semantic_types.schema.json#/$defs/SchemaVersion" },
 
     "State": {
-      "type": "string",
-      "description": "3.4. Canonical v1 runtime state registry. No aliases accepted in persisted state.",
-      "enum": [
-        "CREATED", "REPOSITORY_READY", "GOAL_BOUND", "RECONNAISSANCE", "PLAN_READY",
-        "IMPLEMENTING", "VERIFYING_FOCUSED", "VERIFYING_BROAD", "INTENT_REVIEW",
-        "READY_FOR_USER", "ACCEPTING", "ACCEPTED", "REJECTED", "BLOCKED",
-        "INTEGRATION_CONFLICT", "RECOVERY_REQUIRED", "RECONCILIATION_REQUIRED",
-        "FAILED", "INTERRUPTED"
-      ]
+      "$ref": "state_machine.schema.json#/$defs/State",
+      "description": "3.4. Canonical v1 runtime state registry. No aliases accepted in persisted state. StateMachine v1 (9.8) is this registry's sole authoritative source as of Phase 0D; this $def is a pass-through reference, not a second copy (Canonical Identity Rules)."
     },
 
     "AcceptanceRequestId": { "$ref": "semantic_types.schema.json#/$defs/UUIDv7Id", "description": "Local extension: not enumerated in Blueprint 10.3.2's identifier registry; minted the same way as every other UUIDv7Id so AcceptanceRequest (named in 9.6.4) has a stable identity." },

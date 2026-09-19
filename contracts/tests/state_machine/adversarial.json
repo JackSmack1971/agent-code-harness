@@ -1,0 +1,16 @@
+[
+  { "kind": "transition", "from": "CREATED", "command": "accept", "to": "ACCEPTING", "reason": "command not defined for CREATED" },
+  { "kind": "transition", "from": "CREATED", "command": "bind_repository", "to": "GOAL_BOUND", "reason": "wrong target for a real command" },
+  { "kind": "transition", "from": "ACCEPTED", "command": "block", "to": "BLOCKED", "reason": "ACCEPTED is terminal" },
+  { "kind": "transition", "from": "REJECTED", "command": "fail", "to": "FAILED", "reason": "REJECTED is terminal" },
+  { "kind": "transition", "from": "FAILED", "command": "interrupt", "to": "INTERRUPTED", "reason": "FAILED is terminal" },
+  { "kind": "transition", "from": "IMPLEMENTING", "command": "accept", "to": "ACCEPTING", "reason": "accept is only valid from READY_FOR_USER" },
+  { "kind": "transition", "from": "BOGUS_STATE", "command": "bind_repository", "to": "REPOSITORY_READY", "reason": "not a canonical state" },
+  { "kind": "transition", "from": "CREATED", "command": "bogus_command", "to": "REPOSITORY_READY", "reason": "not a canonical command" },
+  { "kind": "transition", "from": "READY_FOR_USER", "command": "accept", "to": "REJECTED", "reason": "accept always targets ACCEPTING, never REJECTED" },
+
+  { "kind": "resume", "current_state": "IMPLEMENTING", "reason": "resume is only valid from a recoverable source_state; IMPLEMENTING is active" },
+  { "kind": "resume", "current_state": "ACCEPTED", "reason": "ACCEPTED is terminal, not recoverable" },
+  { "kind": "resume", "current_state": "INTEGRATION_CONFLICT", "disposition": "MADE_UP_DISPOSITION", "reason": "not one of the three declared branches" },
+  { "kind": "resume_target_is_accepted", "current_state": "BLOCKED", "resume_target_state": "ACCEPTED", "reason": "no recovery transition may target ACCEPTED directly" }
+]

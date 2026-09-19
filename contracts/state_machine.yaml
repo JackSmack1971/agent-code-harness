@@ -1,0 +1,219 @@
+# StateMachine v1 + RecoveryProtocol v1 (Unified Implementation Blueprint 3.4,
+# 9.8, 10.8). Owner: repository foundation. Sole authoritative source for the
+# runtime state registry, forward/exceptional transition relation, and the
+# canonical recovery relation. Only src/agentic_harness/_state_machine.py may
+# authorize a runtime-state transition, and it does so by consulting this
+# document rather than a second hand-maintained copy (Canonical Identity
+# Rules; CLAUDE.md Scope Discipline). Literal transcription of Blueprint
+# 9.8.3/9.8.4/10.8.2 tables; no transition or recovery rule here is invented.
+$schema: https://agentic-coding-harness.dev/contracts/state_machine.schema.json
+x-contract-name: StateMachine
+x-contract-version: 1
+x-recovery-protocol-version: 1
+
+states:
+  - CREATED
+  - REPOSITORY_READY
+  - GOAL_BOUND
+  - RECONNAISSANCE
+  - PLAN_READY
+  - IMPLEMENTING
+  - VERIFYING_FOCUSED
+  - VERIFYING_BROAD
+  - INTENT_REVIEW
+  - READY_FOR_USER
+  - ACCEPTING
+  - ACCEPTED
+  - REJECTED
+  - BLOCKED
+  - INTEGRATION_CONFLICT
+  - RECOVERY_REQUIRED
+  - RECONCILIATION_REQUIRED
+  - FAILED
+  - INTERRUPTED
+
+terminal_states:
+  - ACCEPTED
+  - REJECTED
+  - FAILED
+
+# 9.8.3 canonical forward transitions.
+forward_transitions:
+  - from: CREATED
+    command: bind_repository
+    to: REPOSITORY_READY
+    guard: repository snapshot valid
+
+  - from: REPOSITORY_READY
+    command: bind_goal
+    to: GOAL_BOUND
+    guard: current Goal revision persisted
+
+  - from: GOAL_BOUND
+    command: begin_reconnaissance
+    to: RECONNAISSANCE
+    guard: repository identity still matches
+
+  - from: RECONNAISSANCE
+    command: finalize_plan
+    to: PLAN_READY
+    guard: Change + VerificationPlan persisted
+
+  - from: PLAN_READY
+    command: begin_implementation
+    to: IMPLEMENTING
+    guard: required authorization/environment available
+
+  - from: IMPLEMENTING
+    command: begin_focused_verification
+    to: VERIFYING_FOCUSED
+    guard: candidate snapshot captured
+
+  - from: VERIFYING_FOCUSED
+    command: focused_passed
+    to: VERIFYING_BROAD
+    guard: required focused checks current and passing/not-applicable
+
+  - from: VERIFYING_FOCUSED
+    command: repair
+    to: IMPLEMENTING
+    guard: failure is remediable and policy permits
+    invalidation_rule: INV-VERIFY-002
+
+  - from: VERIFYING_BROAD
+    command: broad_passed
+    to: INTENT_REVIEW
+    guard: required broad/structural gates satisfied
+
+  - from: VERIFYING_BROAD
+    command: repair
+    to: IMPLEMENTING
+    guard: remediable failure
+    invalidation_rule: INV-VERIFY-002
+
+  - from: INTENT_REVIEW
+    command: review_passed
+    to: READY_FOR_USER
+    guard: current EvidenceManifest complete
+
+  - from: INTENT_REVIEW
+    command: repair
+    to: IMPLEMENTING
+    guard: review identifies remediable gap
+    invalidation_rule: INV-VERIFY-002
+
+  - from: READY_FOR_USER
+    command: accept
+    to: ACCEPTING
+    guard: acceptance authorization valid; destination reconciled
+
+  - from: READY_FOR_USER
+    command: reject
+    to: REJECTED
+    guard: authorized disposition
+
+  - from: ACCEPTING
+    command: integration_verified
+    to: ACCEPTED
+    guard: landed identity + post-integration proof valid
+    invalidation_rule: INV-ACCEPT-001
+
+  - from: ACCEPTING
+    command: integration_conflict
+    to: INTEGRATION_CONFLICT
+    guard: conflict detected; candidate preserved
+
+  - from: ACCEPTING
+    command: destination_drift
+    to: RECONCILIATION_REQUIRED
+    guard: destination no longer matches precondition
+
+# 9.8.4 exceptional transitions: any nonterminal active state may transition
+# via one of these commands to the matching state.
+exceptional_transitions:
+  applicable_from: ANY_NONTERMINAL
+  entries:
+    - command: block
+      to: BLOCKED
+      guard: a known external/actionable prerequisite is absent
+    - command: interrupt
+      to: INTERRUPTED
+      guard: operator cancellation or controlled process interruption
+    - command: require_recovery
+      to: RECOVERY_REQUIRED
+      guard: durable state exists but safe continuation cannot be proven
+    - command: require_reconciliation
+      to: RECONCILIATION_REQUIRED
+      guard: persisted identity and live external state disagree
+    - command: fail
+      to: FAILED
+      guard: non-recoverable invariant, corruption, or internal failure
+  persist_requirement:
+    applies_to_states:
+      - BLOCKED
+      - INTERRUPTED
+      - RECOVERY_REQUIRED
+      - RECONCILIATION_REQUIRED
+      - INTEGRATION_CONFLICT
+    must_persist_one_of: [resume_target_state, recovery_plan]
+    description: >-
+      Resume is permitted only after the state-specific reconciliation
+      procedure proves the guard for that target. No generic "set state
+      back" operation exists.
+
+# 9.8.5 step 4, resolved per state_machine.schema.json's ResumabilityPolicy
+# $def: every committed transition target is a resumability boundary and
+# gets a CheckpointRecord.
+resumability:
+  boundary_states: ALL
+  checkpoint_after_every_committed_transition: true
+
+# 10.8.2 canonical recovery relation.
+recovery_transitions:
+  - source_state: BLOCKED
+    target_mode: RESUME_TARGET_STATE
+    command: resume
+    target_description: recorded pre-block state
+    required_conditions:
+      - blocker_reason_no_longer_true
+      - all_pre_block_guards_revalidate
+
+  - source_state: INTERRUPTED
+    target_mode: RESUME_TARGET_STATE
+    command: resume
+    target_description: recorded interruption checkpoint state
+    required_conditions:
+      - process_tool_tree_proven_quiescent
+      - identities_still_match
+
+  - source_state: RECOVERY_REQUIRED
+    target_mode: LAST_SAFE_CHECKPOINT
+    command: resume
+    target_description: last proven safe checkpoint state
+    required_conditions:
+      - every_incomplete_side_effect_transaction_classified_applied_not_applied_or_reconciled
+
+  - source_state: RECONCILIATION_REQUIRED
+    target_mode: RESUME_TARGET_STATE
+    command: resume
+    target_description: recorded pre-drift state
+    required_conditions:
+      - new_reconciled_snapshot_created
+      - stale_evidence_explicitly_invalidated
+
+  - source_state: INTEGRATION_CONFLICT
+    target_mode: FIXED_BY_DISPOSITION
+    command: null
+    target_description: "one of three explicit dispositions; never ACCEPTED"
+    required_conditions:
+      - disposition_explicitly_recorded
+    branches:
+      - disposition: DESTINATION_UNCHANGED_CANDIDATE_VALID
+        to: READY_FOR_USER
+        command: resolve_conflict_unchanged
+      - disposition: NEW_CANDIDATE_CREATED
+        to: IMPLEMENTING
+        command: resolve_conflict_new_candidate
+      - disposition: AUTHORIZED_ABANDONMENT
+        to: REJECTED
+        command: abandon_conflict

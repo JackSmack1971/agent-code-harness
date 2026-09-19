@@ -3,12 +3,15 @@
 Each function decides exactly the predicate its `INV-*` invariant states,
 over already-validated `DomainSchemas v1` field values (or the minimal
 primitive facts a later runtime component would supply). None of these
-functions perform I/O, persistence, or side effects: the full runtime
-enforcement (transactional journaling, worktree isolation, sandboxed
-execution, policy engine) belongs to Phase 1-3 components that do not exist
-yet. What is verifiable now is the decidable logic each invariant is built
-from; `tests/test_cross_contract_invariants.py` exercises every function
-here against both a satisfying and a violating case.
+functions perform persistence or side effects: the full runtime enforcement
+(transactional journaling, worktree isolation, sandboxed execution, policy
+engine) belongs to Phase 1-3 components that do not exist yet. What is
+verifiable now is the decidable logic each invariant is built from;
+`tests/test_cross_contract_invariants.py` exercises every function here
+against both a satisfying and a violating case. `inv_state_001` is the one
+exception to "no I/O": it delegates to `_state_machine.is_valid_transition`,
+which reads the authoritative `contracts/state_machine.yaml` per call (same
+per-call-read pattern `_domain_schemas.validate_record` already uses).
 
 `contracts/cross_contract_invariant_registry.yaml` is the sole authoritative
 registry of invariant IDs/metadata; this module is deliberately not a
@@ -17,9 +20,11 @@ second copy of that data, only the executable logic each ID maps to.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from ._canonical import canonical_json_bytes
+from ._state_machine import is_valid_transition
 
 # ---------------------------------------------------------------------------
 # IDENTITY
@@ -118,75 +123,16 @@ def inv_approval_002(
 # STATE
 # ---------------------------------------------------------------------------
 
-_CANONICAL_STATES: frozenset[str] = frozenset(
-    {
-        "CREATED", "REPOSITORY_READY", "GOAL_BOUND", "RECONNAISSANCE", "PLAN_READY",
-        "IMPLEMENTING", "VERIFYING_FOCUSED", "VERIFYING_BROAD", "INTENT_REVIEW",
-        "READY_FOR_USER", "ACCEPTING", "ACCEPTED", "REJECTED", "BLOCKED",
-        "INTEGRATION_CONFLICT", "RECOVERY_REQUIRED", "RECONCILIATION_REQUIRED",
-        "FAILED", "INTERRUPTED",
-    }
-)
 
-_TERMINAL_STATES: frozenset[str] = frozenset({"ACCEPTED", "REJECTED", "FAILED"})
-
-# PROVISIONAL, NOT AN AUTHORITATIVE SOURCE: `StateMachine v1` (Blueprint
-# Contract 5, 9.8) is not yet materialized under contracts/ (only DomainSchemas
-# v1 and CrossContractInvariantRegistry v1 are, as of this phase slice). The
-# table below is a literal, unmodified transcription of Blueprint 9.8.3/9.8.4's
-# own transition relation -- not an invented semantic choice -- included only
-# so INV-STATE-001 (required by CrossContractInvariantRegistry v1) has an
-# executable predicate to test against. When StateMachine v1 is implemented as
-# its own contracts/state_machine.* source, THIS TABLE MUST BE DELETED and
-# inv_state_001 rewired to consult that source instead, so the transition
-# relation has exactly one machine-readable owner (Canonical Identity Rules).
-# 9.8.3 canonical forward transitions: (from_state, command) -> to_state.
-_FORWARD_TRANSITIONS: dict[tuple[str, str], str] = {
-    ("CREATED", "bind_repository"): "REPOSITORY_READY",
-    ("REPOSITORY_READY", "bind_goal"): "GOAL_BOUND",
-    ("GOAL_BOUND", "begin_reconnaissance"): "RECONNAISSANCE",
-    ("RECONNAISSANCE", "finalize_plan"): "PLAN_READY",
-    ("PLAN_READY", "begin_implementation"): "IMPLEMENTING",
-    ("IMPLEMENTING", "begin_focused_verification"): "VERIFYING_FOCUSED",
-    ("VERIFYING_FOCUSED", "focused_passed"): "VERIFYING_BROAD",
-    ("VERIFYING_FOCUSED", "repair"): "IMPLEMENTING",
-    ("VERIFYING_BROAD", "broad_passed"): "INTENT_REVIEW",
-    ("VERIFYING_BROAD", "repair"): "IMPLEMENTING",
-    ("INTENT_REVIEW", "review_passed"): "READY_FOR_USER",
-    ("INTENT_REVIEW", "repair"): "IMPLEMENTING",
-    ("READY_FOR_USER", "accept"): "ACCEPTING",
-    ("READY_FOR_USER", "reject"): "REJECTED",
-    ("ACCEPTING", "integration_verified"): "ACCEPTED",
-    ("ACCEPTING", "integration_conflict"): "INTEGRATION_CONFLICT",
-    ("ACCEPTING", "destination_drift"): "RECONCILIATION_REQUIRED",
-}
-
-# 9.8.4: any nonterminal active state may transition to one of these via its own symbolic command.
-_EXCEPTIONAL_COMMAND_TARGET: dict[str, str] = {
-    "block": "BLOCKED",
-    "interrupt": "INTERRUPTED",
-    "require_recovery": "RECOVERY_REQUIRED",
-    "require_reconciliation": "RECONCILIATION_REQUIRED",
-    "fail": "FAILED",
-}
-
-
-def inv_state_001(from_state: str, command: str, to_state: str) -> bool:
+def inv_state_001(from_state: str, command: str, to_state: str, *, contracts_root: Path | None = None) -> bool:
     """Only StateMachine v1's canonical relation may authorize a transition.
 
-    True iff (from_state, command) -> to_state is one of the canonical
-    forward transitions (9.8.3) or, for a nonterminal from_state, one of the
-    exceptional transitions (9.8.4).
+    Delegates to `agentic_harness._state_machine.is_valid_transition`, which
+    consults `contracts/state_machine.yaml` (the sole authoritative source
+    for Blueprint 9.8.3's forward transitions and 9.8.4's exceptional
+    transitions) rather than a hand-maintained copy of that relation.
     """
-    if from_state not in _CANONICAL_STATES or to_state not in _CANONICAL_STATES:
-        return False
-    forward_target = _FORWARD_TRANSITIONS.get((from_state, command))
-    if forward_target is not None:
-        return forward_target == to_state
-    exceptional_target = _EXCEPTIONAL_COMMAND_TARGET.get(command)
-    if exceptional_target is not None and from_state not in _TERMINAL_STATES:
-        return exceptional_target == to_state
-    return False
+    return is_valid_transition(from_state, command, to_state, contracts_root=contracts_root)
 
 
 def inv_state_002(

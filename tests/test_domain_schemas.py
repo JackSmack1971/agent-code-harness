@@ -19,12 +19,18 @@ def _semantic_types_doc(contracts_root: Path) -> dict[str, Any]:
     return json.loads((contracts_root / "semantic_types.schema.json").read_text(encoding="utf-8"))
 
 
+def _state_machine_doc(contracts_root: Path) -> dict[str, Any]:
+    return json.loads((contracts_root / "state_machine.schema.json").read_text(encoding="utf-8"))
+
+
 def _registry(contracts_root: Path) -> tuple[Registry, dict[str, Any]]:
     dom = _schema_doc(contracts_root)
     sem = _semantic_types_doc(contracts_root)
+    sm = _state_machine_doc(contracts_root)
     registry = Registry().with_resources(
         [
             (sem["$id"], Resource.from_contents(sem)),
+            (sm["$id"], Resource.from_contents(sm)),
             (dom["$id"], Resource.from_contents(dom)),
         ]
     )

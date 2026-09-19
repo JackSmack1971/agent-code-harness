@@ -1,0 +1,399 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-coding-harness.dev/contracts/state_machine.schema.json",
+  "x-contract-name": "StateMachine",
+  "x-contract-version": 1,
+  "x-recovery-protocol-version": 1,
+  "$comment": "Blueprint 3.4, 9.8 (StateMachine v1, Contract 5) and 10.8 (RecoveryProtocol v1), which the Closure text binds to this single file ('state_machine.yaml MUST contain recovery_transitions in addition to forward transitions'). Only this contract, consumed through src/agentic_harness/_state_machine.py, may authorize a runtime-state transition (INV-STATE-001); no other module may hand-maintain a second copy of the transition or recovery relation.",
+  "title": "StateMachine v1 + RecoveryProtocol v1",
+  "description": "Sole authoritative source for the canonical runtime state registry, forward/exceptional transition relation, transition command shape, per-transition commit effects, resumability-checkpoint policy, and the canonical recovery relation (RecoveryPlan/RecoveryProof types and per-source-state recovery rules).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "x-contract-name", "x-contract-version", "x-recovery-protocol-version",
+    "states", "terminal_states", "forward_transitions", "exceptional_transitions",
+    "resumability", "recovery_transitions"
+  ],
+  "properties": {
+    "$schema": { "const": "https://agentic-coding-harness.dev/contracts/state_machine.schema.json" },
+    "x-contract-name": { "const": "StateMachine" },
+    "x-contract-version": { "type": "integer", "minimum": 1 },
+    "x-recovery-protocol-version": { "type": "integer", "minimum": 1 },
+
+    "states": {
+      "type": "array",
+      "description": "3.4. Canonical v1 state registry, exact order as the Blueprint lists it. No aliases are accepted in persisted state.",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/State" }
+    },
+    "terminal_states": {
+      "type": "array",
+      "description": "9.8.4. REJECTED, ACCEPTED, and FAILED are terminal for that run revision: no forward, exceptional, or recovery transition may originate from a terminal state.",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/State" }
+    },
+
+    "forward_transitions": {
+      "type": "array",
+      "description": "9.8.3. Canonical forward transition table.",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/ForwardTransition" }
+    },
+
+    "exceptional_transitions": {
+      "$ref": "#/$defs/ExceptionalTransitionBlock"
+    },
+
+    "resumability": {
+      "$ref": "#/$defs/ResumabilityPolicy"
+    },
+
+    "recovery_transitions": {
+      "type": "array",
+      "description": "10.8.2. Canonical recovery relation: exactly one entry per recoverable source_state.",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/RecoveryRelation" }
+    }
+  },
+
+  "$defs": {
+    "State": {
+      "type": "string",
+      "enum": [
+        "CREATED", "REPOSITORY_READY", "GOAL_BOUND", "RECONNAISSANCE", "PLAN_READY",
+        "IMPLEMENTING", "VERIFYING_FOCUSED", "VERIFYING_BROAD", "INTENT_REVIEW",
+        "READY_FOR_USER", "ACCEPTING", "ACCEPTED", "REJECTED", "BLOCKED",
+        "INTEGRATION_CONFLICT", "RECOVERY_REQUIRED", "RECONCILIATION_REQUIRED",
+        "FAILED", "INTERRUPTED"
+      ]
+    },
+
+    "ForwardTransition": {
+      "type": "object",
+      "description": "9.8.3 table row. `invalidation_rule`, when present, names an INV-* id from CrossContractInvariantRegistry v1 that this transition's commit effects (9.8.5 step 3) apply; it is a reference, not a second copy of that invariant's statement.",
+      "additionalProperties": false,
+      "required": ["from", "command", "to", "guard"],
+      "properties": {
+        "from": { "$ref": "#/$defs/State" },
+        "command": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "to": { "$ref": "#/$defs/State" },
+        "guard": { "type": "string", "minLength": 1 },
+        "invalidation_rule": {
+          "anyOf": [
+            { "type": "string", "pattern": "^INV-[A-Z]+-[0-9]{3}$" },
+            { "type": "null" }
+          ],
+          "default": null
+        }
+      }
+    },
+
+    "ExceptionalTransitionBlock": {
+      "type": "object",
+      "description": "9.8.4. Any nonterminal active state MAY transition via one of these commands. `persist_requirement` states the durable field(s) the target state MUST carry so no generic 'set state back' operation can exist.",
+      "additionalProperties": false,
+      "required": ["applicable_from", "entries", "persist_requirement"],
+      "properties": {
+        "applicable_from": {
+          "const": "ANY_NONTERMINAL",
+          "description": "Resolved at validation time against `states` minus `terminal_states`."
+        },
+        "entries": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/ExceptionalTransition" }
+        },
+        "persist_requirement": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["applies_to_states", "must_persist_one_of", "description"],
+          "properties": {
+            "applies_to_states": {
+              "type": "array",
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/State" }
+            },
+            "must_persist_one_of": {
+              "type": "array",
+              "const": ["resume_target_state", "recovery_plan"]
+            },
+            "description": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+
+    "ExceptionalTransition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "to", "guard"],
+      "properties": {
+        "command": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "to": { "$ref": "#/$defs/State" },
+        "guard": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "TransitionCommand": {
+      "type": "object",
+      "description": "9.8.2. A requested transition. `expected_run_version` is compared with optimistic concurrency; a stale request is rejected (STATE_STALE_RUN_VERSION) without mutating state.",
+      "additionalProperties": false,
+      "required": [
+        "transition_id", "run_id", "from_state", "to_state", "command",
+        "expected_run_version", "precondition_evidence", "requested_at"
+      ],
+      "properties": {
+        "transition_id": { "$ref": "semantic_types.schema.json#/$defs/UUIDv7Id" },
+        "run_id": { "$ref": "semantic_types.schema.json#/$defs/RunId" },
+        "from_state": { "$ref": "#/$defs/State" },
+        "to_state": { "$ref": "#/$defs/State" },
+        "command": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "expected_run_version": { "$ref": "semantic_types.schema.json#/$defs/RunVersion" },
+        "precondition_evidence": {
+          "type": "array",
+          "items": { "$ref": "semantic_types.schema.json#/$defs/Digest" }
+        },
+        "requested_at": { "$ref": "semantic_types.schema.json#/$defs/UtcTimestamp" }
+      }
+    },
+
+    "TransitionEffects": {
+      "type": "object",
+      "description": "9.8.5. Every committed transition MUST atomically perform all four steps; a rejected transition performs none of them and instead appends `state.transition.rejected` only if the event store is healthy.",
+      "additionalProperties": false,
+      "required": ["steps"],
+      "properties": {
+        "steps": {
+          "type": "array",
+          "const": [
+            "UPDATE_STATE_AND_INCREMENT_RUN_VERSION",
+            "APPEND_STATE_TRANSITION_COMMITTED_EVENT",
+            "APPLY_CONTRACT_DEFINED_INVALIDATIONS",
+            "PERSIST_CHECKPOINT_IF_RESUMABILITY_BOUNDARY"
+          ]
+        }
+      }
+    },
+
+    "ResumabilityPolicy": {
+      "type": "object",
+      "description": "9.8.5 step 4. The Blueprint text names the checkpoint action but does not enumerate which subset of committed transitions counts as a 'resumability boundary'; this contract resolves that non-narrowing (checkpointing is pure-add durability, never a relaxation of any invariant) by requiring a CheckpointRecord after every committed transition, so RECOVERY_REQUIRED's 'last proven safe checkpoint state' (10.8.2) is always well-defined.",
+      "additionalProperties": false,
+      "required": ["boundary_states", "checkpoint_after_every_committed_transition"],
+      "properties": {
+        "boundary_states": {
+          "const": "ALL",
+          "description": "Every state in `states` is a resumability boundary."
+        },
+        "checkpoint_after_every_committed_transition": { "const": true }
+      }
+    },
+
+    "RecoverableSourceState": {
+      "type": "string",
+      "enum": ["BLOCKED", "INTERRUPTED", "RECOVERY_REQUIRED", "RECONCILIATION_REQUIRED", "INTEGRATION_CONFLICT"]
+    },
+
+    "RecoveryTargetMode": {
+      "type": "string",
+      "description": "How the recovery target state is determined. RESUME_TARGET_STATE and LAST_SAFE_CHECKPOINT are dynamic (read from the run's persisted `resume_target_state` / most recent CheckpointRecord); FIXED_BY_DISPOSITION selects among `branches` by an explicit operator/runtime disposition. No mode may ever resolve to ACCEPTED (10.8.2: 'No recovery transition may target ACCEPTED directly').",
+      "enum": ["RESUME_TARGET_STATE", "LAST_SAFE_CHECKPOINT", "FIXED_BY_DISPOSITION"]
+    },
+
+    "RecoveryBranch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disposition", "to", "command"],
+      "properties": {
+        "disposition": { "type": "string", "minLength": 1 },
+        "to": {
+          "allOf": [
+            { "$ref": "#/$defs/State" },
+            { "not": { "const": "ACCEPTED" } }
+          ]
+        },
+        "command": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" }
+      }
+    },
+
+    "RecoveryRelation": {
+      "type": "object",
+      "description": "10.8.2 canonical recovery relation, one entry per recoverable source_state.",
+      "additionalProperties": false,
+      "required": ["source_state", "target_mode", "command", "target_description", "required_conditions"],
+      "properties": {
+        "source_state": { "$ref": "#/$defs/RecoverableSourceState" },
+        "target_mode": { "$ref": "#/$defs/RecoveryTargetMode" },
+        "command": {
+          "anyOf": [
+            { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+            { "type": "null" }
+          ],
+          "description": "Null when target_mode is FIXED_BY_DISPOSITION (each branch carries its own command)."
+        },
+        "target_description": { "type": "string", "minLength": 1 },
+        "required_conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "branches": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/RecoveryBranch" },
+          "description": "Present only when target_mode is FIXED_BY_DISPOSITION."
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "target_mode": { "const": "FIXED_BY_DISPOSITION" } } },
+          "then": { "required": ["branches"] },
+          "else": { "required": ["command"], "not": { "required": ["branches"] } }
+        }
+      ]
+    },
+
+    "ResumeIdempotencyRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule_id", "description"],
+      "properties": {
+        "rule_id": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "InvalidationRule": {
+      "type": "object",
+      "description": "9.8.1's RecoveryPlan.invalidations element. Minimal structural carrier for the target of a recovery-driven invalidation; the full InvalidationRule contract is not otherwise named by the Blueprint and is not widened beyond this shape.",
+      "additionalProperties": false,
+      "required": ["target_kind", "target_ref", "reason_code"],
+      "properties": {
+        "target_kind": {
+          "type": "string",
+          "enum": ["APPROVAL", "VERIFICATION_RESULT", "EVIDENCE_MANIFEST", "CHECKPOINT", "OTHER"]
+        },
+        "target_ref": { "type": "string", "minLength": 1 },
+        "reason_code": { "type": "string", "pattern": "^[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$" }
+      }
+    },
+
+    "RecoveryProof": {
+      "description": "10.8.1. Discriminated union (by `kind`) for repository identity, worktree identity, destination identity, config/policy identity, side-effect journal status, lock ownership, or explicit operator disposition.",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "expected_snapshot_digest", "observed_snapshot_digest", "matches"],
+          "properties": {
+            "kind": { "const": "REPOSITORY_IDENTITY" },
+            "expected_snapshot_digest": { "$ref": "semantic_types.schema.json#/$defs/Digest" },
+            "observed_snapshot_digest": { "$ref": "semantic_types.schema.json#/$defs/Digest" },
+            "matches": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "expected_worktree_ref", "observed_worktree_ref", "matches"],
+          "properties": {
+            "kind": { "const": "WORKTREE_IDENTITY" },
+            "expected_worktree_ref": { "type": "string", "minLength": 1 },
+            "observed_worktree_ref": { "type": "string", "minLength": 1 },
+            "matches": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "expected_destination_ref", "observed_destination_ref", "matches"],
+          "properties": {
+            "kind": { "const": "DESTINATION_IDENTITY" },
+            "expected_destination_ref": { "type": "string", "minLength": 1 },
+            "observed_destination_ref": { "type": "string", "minLength": 1 },
+            "matches": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "expected_config_digest", "observed_config_digest", "expected_policy_digest", "observed_policy_digest", "matches"],
+          "properties": {
+            "kind": { "const": "CONFIG_POLICY_IDENTITY" },
+            "expected_config_digest": { "$ref": "semantic_types.schema.json#/$defs/Digest" },
+            "observed_config_digest": { "$ref": "semantic_types.schema.json#/$defs/Digest" },
+            "expected_policy_digest": { "$ref": "semantic_types.schema.json#/$defs/Digest" },
+            "observed_policy_digest": { "$ref": "semantic_types.schema.json#/$defs/Digest" },
+            "matches": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "transaction_ref", "classification"],
+          "properties": {
+            "kind": { "const": "SIDE_EFFECT_JOURNAL_STATUS" },
+            "transaction_ref": { "type": "string", "minLength": 1 },
+            "classification": { "type": "string", "enum": ["APPLIED", "NOT_APPLIED", "RECONCILED"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "lock_ref", "owner_run_id", "reclaimed"],
+          "properties": {
+            "kind": { "const": "LOCK_OWNERSHIP" },
+            "lock_ref": { "type": "string", "minLength": 1 },
+            "owner_run_id": { "anyOf": [{ "$ref": "semantic_types.schema.json#/$defs/RunId" }, { "type": "null" }] },
+            "reclaimed": { "type": "boolean" },
+            "reclaim_basis": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "default": null }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "disposition", "operator_ref", "decided_at"],
+          "properties": {
+            "kind": { "const": "OPERATOR_DISPOSITION" },
+            "disposition": { "type": "string", "minLength": 1 },
+            "operator_ref": { "type": "string", "minLength": 1 },
+            "decided_at": { "$ref": "semantic_types.schema.json#/$defs/UtcTimestamp" }
+          }
+        }
+      ]
+    },
+
+    "RecoveryPlan": {
+      "type": "object",
+      "description": "10.8.1. Durable, digest-bound recovery plan record for a run currently in a recoverable source_state.",
+      "additionalProperties": false,
+      "required": [
+        "recovery_plan_id", "run_id", "source_state", "target_state",
+        "required_proofs", "invalidations", "operator_action_required", "created_at", "digest"
+      ],
+      "properties": {
+        "recovery_plan_id": { "$ref": "semantic_types.schema.json#/$defs/UUIDv7Id" },
+        "run_id": { "$ref": "semantic_types.schema.json#/$defs/RunId" },
+        "source_state": { "$ref": "#/$defs/RecoverableSourceState" },
+        "target_state": {
+          "allOf": [
+            { "$ref": "#/$defs/State" },
+            { "not": { "const": "ACCEPTED" } }
+          ]
+        },
+        "required_proofs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/RecoveryProof" }
+        },
+        "invalidations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/InvalidationRule" }
+        },
+        "operator_action_required": { "type": "boolean" },
+        "created_at": { "$ref": "semantic_types.schema.json#/$defs/UtcTimestamp" },
+        "digest": { "$ref": "semantic_types.schema.json#/$defs/Digest" }
+      }
+    }
+  }
+}

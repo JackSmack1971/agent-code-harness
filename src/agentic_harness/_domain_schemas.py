@@ -62,9 +62,11 @@ def _load_bundle(contracts_root: Path | None = None) -> _SchemaBundle:
         )
     domain_doc = load_json(root / "domain_schemas.schema.json")
     semantic_doc = load_json(root / "semantic_types.schema.json")
+    state_machine_doc = load_json(root / "state_machine.schema.json")
     registry = Registry().with_resources(
         [
             (semantic_doc["$id"], Resource.from_contents(semantic_doc)),
+            (state_machine_doc["$id"], Resource.from_contents(state_machine_doc)),
             (domain_doc["$id"], Resource.from_contents(domain_doc)),
         ]
     )

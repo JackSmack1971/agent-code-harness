@@ -1,0 +1,9 @@
+contract: SideEffectTransactionProtocol
+version: 1
+families: [FILESYSTEM, GIT, PROCESS, EXTERNAL_WRITE, APPROVAL_CONSUMPTION, ARTIFACT_WRITE, INTEGRATION]
+phases: [PREPARED, APPLYING, OBSERVED_APPLIED, COMMITTED, RECONCILIATION_REQUIRED, ABORTED]
+recovery_classifications: [NOT_APPLIED, APPLIED_MATCH, APPLIED_DIVERGENT, UNKNOWN]
+execution:
+  order: [validate_authorize, persist_prepared, perform_effect, observe_post_state, commit_result]
+  unknown_retry: forbidden
+  divergent_retry: forbidden

@@ -225,15 +225,15 @@ normalization, and classification/redaction foundation):
   `tests/policy_contract/` — golden/adversarial fixtures, same
   `{"def": ..., "value": ...}` convention as `tests/domain_schemas/`.
 
-Everything else named in the Phase-0 Contract Closure Gate (`EventRegistry
-v1`, `SideEffectTransactionProtocol v1`, `CLIProtocol v1`,
-`PersistenceSchema v1`, `ToolProtocol v1`, `VerificationProtocol v1`, etc.)
-remains out of scope for this slice and MUST NOT be assumed to exist yet;
-see `.claude/references/phase-registry.md`. Wiring the policy/resource/
-redaction foundation materialized this phase into an actual sandboxed
-tool-execution path (native fs/process/search tools, the container
-backend, live approval persistence) is Phase 2/3 work, not this one: what
-exists here is the deterministic decision algebra and normalization logic
-those later phases will call.
+`EventRegistry v1`, `SideEffectTransactionProtocol v1`, and `PersistenceSchema
+v1` are materialized in this repository as the Phase 0F foundation. Their
+runtime implementations are `src/agentic_harness/_events.py`,
+`_side_effects.py`, and `_persistence.py`; the machine-readable authorities
+are the adjacent registry/schema files and `persistence.sql`. Other later
+contracts (`CLIProtocol v1`, `ToolProtocol v1`, `VerificationProtocol v1`,
+etc.) remain out of scope until their phases are implemented. Wiring the
+policy/resource/redaction foundation into an actual sandboxed tool-execution
+path (native fs/process/search tools, the container backend, live approval
+persistence) remains Phase 2/3 work.
 
 Offline conformance tests live in `../tests/` and run with `uv run pytest`.

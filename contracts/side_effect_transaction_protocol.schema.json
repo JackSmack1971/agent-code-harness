@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-harness.dev/contracts/side_effect_transaction_protocol.schema.json",
+  "x-contract-name": "SideEffectTransactionProtocol",
+  "x-contract-version": 1,
+  "type": "object", "additionalProperties": false,
+  "required": ["contract", "version", "families", "phases", "recovery_classifications", "execution"],
+  "properties": {
+    "contract": {"const": "SideEffectTransactionProtocol"}, "version": {"const": 1},
+    "families": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "phases": {"type": "array", "items": {"type": "string"}, "minItems": 1},
+    "recovery_classifications": {"type": "array", "items": {"type": "string"}, "minItems": 4},
+    "execution": {"type": "object", "additionalProperties": false, "required": ["order", "unknown_retry", "divergent_retry"], "properties": {"order": {"type": "array", "items": {"type": "string"}}, "unknown_retry": {"const": "forbidden"}, "divergent_retry": {"const": "forbidden"}}}
+  }
+}

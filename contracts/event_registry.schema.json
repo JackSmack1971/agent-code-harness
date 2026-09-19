@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-harness.dev/contracts/event_registry.schema.json",
+  "x-contract-name": "EventRegistry",
+  "x-contract-version": 1,
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract", "version", "events"],
+  "properties": {
+    "contract": {"const": "EventRegistry"},
+    "version": {"const": 1},
+    "events": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/event"}}
+  },
+  "$defs": {
+    "event": {
+      "type": "object", "additionalProperties": false,
+      "required": ["event_type", "schema_version", "replay_role", "redaction_profile", "allowed_states", "causation_rule", "payload_schema"],
+      "properties": {
+        "event_type": {"type": "string", "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"},
+        "schema_version": {"type": "integer", "minimum": 1},
+        "replay_role": {"enum": ["AUTHORITATIVE", "AUDIT_ONLY", "DERIVED"]},
+        "redaction_profile": {"type": "string", "minLength": 1},
+        "allowed_states": {"type": "array", "items": {"type": "string"}},
+        "causation_rule": {"type": "string", "minLength": 1},
+        "payload_schema": {"type": "object", "additionalProperties": false, "required": ["type", "properties", "additionalProperties"], "properties": {"type": {"const": "object"}, "properties": {"type": "object"}, "required": {"type": "array", "items": {"type": "string"}}, "additionalProperties": {"const": false}}}
+      }
+    }
+  }
+}

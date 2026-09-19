@@ -1,0 +1,726 @@
+[
+  {
+    "def": "GoalContract",
+    "value": {
+      "schema_name": "GoalContract",
+      "schema_version": 1,
+      "goal_id": "01a0b7fd-c877-7750-a246-28cc4c878ea2",
+      "goal_revision_id": "01a0b7fd-c878-7554-b8ef-b73affa16037",
+      "parent_revision_id": null,
+      "intent": "do it",
+      "desired_outcome": "done",
+      "constraints": [
+        "c"
+      ],
+      "acceptance_criteria": [
+        {
+          "criterion_id": "AC-1",
+          "text": "does the thing",
+          "mandatory": true,
+          "verification_class": "BEHAVIORAL",
+          "source": "USER",
+          "source_ref": null,
+          "success_semantics": {
+            "mode": "ALL",
+            "claim_refs": [
+              "c1"
+            ],
+            "threshold": null,
+            "allow_waiver": false
+          }
+        }
+      ],
+      "uncertainties": [
+        {
+          "uncertainty_id": "U-1",
+          "question": "is it fine",
+          "resolution_class": "DETERMINISTIC",
+          "status": "RESOLVED",
+          "resolution": "yes",
+          "resolution_evidence": [
+            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          ],
+          "blocking": false
+        }
+      ],
+      "created_at": "2026-09-19T00:00:00Z",
+      "source": "USER",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "ChangeContract",
+    "value": {
+      "schema_name": "ChangeContract",
+      "schema_version": 1,
+      "change_id": "01a0b7fd-c878-73f4-9330-70206faf49a0",
+      "change_revision_id": "01a0b7fd-c878-70c2-9f1e-10ad472ecfd2",
+      "parent_revision_id": null,
+      "goal_revision_id": "01a0b7fd-c878-7554-b8ef-b73affa16037",
+      "base_repository_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "summary": "s",
+      "allowed_resources": [
+        {
+          "kind": "PATH",
+          "match": "EXACT",
+          "value": {
+            "path": "src/x.py"
+          }
+        }
+      ],
+      "required_effects": [
+        "READ"
+      ],
+      "acceptance_criteria": [
+        {
+          "criterion_id": "AC-1",
+          "goal_revision_id": "01a0b7fd-c878-7554-b8ef-b73affa16037"
+        }
+      ],
+      "verification_plan_id": "01a0b7fd-c878-7f91-a69d-9e95e80c375c",
+      "created_at": "2026-09-19T00:00:00Z",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "VerificationPlan",
+    "value": {
+      "schema_name": "VerificationPlan",
+      "schema_version": 1,
+      "plan_id": "01a0b7fd-c878-7f91-a69d-9e95e80c375c",
+      "change_revision_id": "01a0b7fd-c878-70c2-9f1e-10ad472ecfd2",
+      "candidate_binding": "LATE_BOUND",
+      "checks": [
+        {
+          "check_id": "01a0b7fd-c878-72e7-a3de-55313aea13ea",
+          "name": "n",
+          "check_type": "FOCUSED",
+          "required": true,
+          "mechanism": {
+            "kind": "COMMAND",
+            "argv": [
+              "pytest"
+            ],
+            "expected_exit_codes": [
+              0
+            ]
+          },
+          "expected_effects": [
+            "READ"
+          ],
+          "resource_scope": [
+            {
+              "kind": "PATH",
+              "match": "EXACT",
+              "value": {
+                "path": "src/x.py"
+              }
+            }
+          ],
+          "timeout_ms": 1000,
+          "success_predicate": {
+            "kind": "EXIT_CODE_SET",
+            "exit_codes": [
+              0
+            ]
+          },
+          "feasibility_policy": "FAIL",
+          "criterion_refs": [
+            "AC-1"
+          ],
+          "identity_dependencies": [
+            "CANDIDATE_SNAPSHOT"
+          ]
+        }
+      ],
+      "intent_review": {
+        "reviewer_route": "reviewer",
+        "criterion_refs": [
+          "AC-1"
+        ],
+        "required": true
+      },
+      "post_integration_checks": [],
+      "created_at": "2026-09-19T00:00:00Z",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "RepositorySnapshot",
+    "value": {
+      "schema_name": "RepositorySnapshot",
+      "schema_version": 1,
+      "repository_root_identity": "root",
+      "git_common_dir_identity": "gcd",
+      "head_commit": "sha1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "head_ref": "refs/heads/main",
+      "index_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "tracked_worktree_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "untracked_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "submodule_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "is_dirty": false,
+      "captured_at": "2026-09-19T00:00:00Z",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "CandidateSnapshot",
+    "value": {
+      "schema_name": "CandidateSnapshot",
+      "schema_version": 1,
+      "run_id": "01a0b7fd-c877-794e-b900-b41fbac76b4b",
+      "base_repository_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "worktree_identity": "wt",
+      "head_commit": "sha1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "tree_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "index_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "untracked_manifest_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "captured_at": "2026-09-19T00:00:00Z",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "VerificationResult",
+    "value": {
+      "schema_name": "VerificationResult",
+      "schema_version": 1,
+      "check_id": "01a0b7fd-c878-72e7-a3de-55313aea13ea",
+      "plan_id": "01a0b7fd-c878-7f91-a69d-9e95e80c375c",
+      "candidate_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "check_type": "FOCUSED",
+      "status": "PASS",
+      "started_at": "2026-09-19T00:00:00Z",
+      "finished_at": "2026-09-19T00:00:00Z",
+      "tool_call_ids": [
+        "01a0b7fd-c878-770e-9e64-58f1cc276ae7"
+      ],
+      "artifact_ids": [
+        "01a0b7fd-c878-72b0-abc1-213a850e7bc6"
+      ],
+      "claim_refs": [
+        "c1"
+      ],
+      "reason_code": null,
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "EvidenceManifest",
+    "value": {
+      "schema_name": "EvidenceManifest",
+      "schema_version": 1,
+      "run_id": "01a0b7fd-c877-794e-b900-b41fbac76b4b",
+      "change_revision_id": "01a0b7fd-c878-70c2-9f1e-10ad472ecfd2",
+      "candidate_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "criterion_evidence": [
+        {
+          "criterion_id": "AC-1",
+          "claim_refs": [
+            "c1"
+          ],
+          "evidence_refs": [
+            {
+              "kind": "VERIFICATION_RESULT",
+              "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "candidate_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ],
+          "evaluation": "SATISFIED",
+          "evaluator_version": "v1"
+        }
+      ],
+      "verification_result_digests": [
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ],
+      "review_result_digest": null,
+      "created_at": "2026-09-19T00:00:00Z",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "ApprovalRequest",
+    "value": {
+      "schema_name": "ApprovalRequest",
+      "schema_version": 1,
+      "approval_id": "01a0b7fd-c878-7705-be06-d505603ea2ad",
+      "run_id": "01a0b7fd-c877-794e-b900-b41fbac76b4b",
+      "tool_call_id": "01a0b7fd-c878-770e-9e64-58f1cc276ae7",
+      "effects": [
+        "WORKSPACE_WRITE"
+      ],
+      "resources": [
+        {
+          "kind": "PATH",
+          "normalized_key": "src/x.py",
+          "value": {
+            "path": "src/x.py"
+          }
+        }
+      ],
+      "argument_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "credential_exposure": "NONE",
+      "reversibility": "REVERSIBLE",
+      "requested_scope": "ONCE",
+      "created_at": "2026-09-19T00:00:00Z",
+      "expires_at": null,
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "ApprovalGrant",
+    "value": {
+      "schema_name": "ApprovalGrant",
+      "schema_version": 1,
+      "approval_id": "01a0b7fd-c878-7705-be06-d505603ea2ad",
+      "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "disposition": "ALLOW_ONCE",
+      "actor_type": "USER",
+      "actor_id": "u1",
+      "issued_at": "2026-09-19T00:00:00Z",
+      "expires_at": null,
+      "revoked_at": null,
+      "consumption_limit": 1,
+      "consumed_count": 0,
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "IntentReviewResult",
+    "value": {
+      "schema_name": "IntentReviewResult",
+      "schema_version": 1,
+      "run_id": "01a0b7fd-c877-794e-b900-b41fbac76b4b",
+      "candidate_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "reviewer_route": "reviewer",
+      "reviewer_model_identity": "model-x",
+      "independence_context_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "criterion_results": [
+        {
+          "criterion_id": "AC-1",
+          "status": "PASS",
+          "rationale_artifact_id": "01a0b7fd-c878-72b0-abc1-213a850e7bc6",
+          "evidence_refs": [
+            {
+              "kind": "REVIEW_RESULT",
+              "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "candidate_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ]
+        }
+      ],
+      "overall_status": "PASS",
+      "artifact_ids": [
+        "01a0b7fd-c878-72b0-abc1-213a850e7bc6"
+      ],
+      "created_at": "2026-09-19T00:00:00Z",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "RunRecord",
+    "value": {
+      "schema_name": "RunRecord",
+      "schema_version": 1,
+      "run_id": "01a0b7fd-c877-794e-b900-b41fbac76b4b",
+      "state": "CREATED",
+      "run_version": 0,
+      "goal_revision_id": null,
+      "change_revision_id": null,
+      "repository_snapshot_digest": null,
+      "candidate_snapshot_digest": null,
+      "config_digest": null,
+      "policy_digest": null,
+      "resume_target_state": null,
+      "created_at": "2026-09-19T00:00:00Z",
+      "updated_at": "2026-09-19T00:00:00Z",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "CheckpointRecord",
+    "value": {
+      "schema_name": "CheckpointRecord",
+      "schema_version": 1,
+      "checkpoint_id": "01a0b7fd-c878-7f7a-abc9-a1a07c5b04da",
+      "run_id": "01a0b7fd-c877-794e-b900-b41fbac76b4b",
+      "run_version": 0,
+      "state": "CREATED",
+      "created_at": "2026-09-19T00:00:00Z",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "ArtifactRecord",
+    "value": {
+      "schema_name": "ArtifactRecord",
+      "schema_version": 1,
+      "artifact_id": "01a0b7fd-c878-72b0-abc1-213a850e7bc6",
+      "content_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "media_type": "text/plain",
+      "byte_length": 10,
+      "storage_relpath": "objects/sha256/aa/aa/x",
+      "classification": "INTERNAL",
+      "created_at": "2026-09-19T00:00:00Z",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "ToolCallRecord",
+    "value": {
+      "schema_name": "ToolCallRecord",
+      "schema_version": 1,
+      "tool_call_id": "01a0b7fd-c878-770e-9e64-58f1cc276ae7",
+      "run_id": "01a0b7fd-c877-794e-b900-b41fbac76b4b",
+      "tool_name": "fs.write",
+      "tool_version": 1,
+      "tool_schema_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "argument_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "requested_effects": [
+        "WORKSPACE_WRITE"
+      ],
+      "requested_resources": [
+        {
+          "kind": "PATH",
+          "normalized_key": "src/x.py",
+          "value": {
+            "path": "src/x.py"
+          }
+        }
+      ],
+      "expected_candidate_snapshot": null,
+      "timeout_ms": 1000,
+      "status": "SUCCESS",
+      "started_at": "2026-09-19T00:00:00Z",
+      "finished_at": "2026-09-19T00:00:00Z",
+      "exit_code": 0,
+      "stdout": {
+        "kind": "INLINE",
+        "text": "ok",
+        "encoding": "UTF8"
+      },
+      "stderr": null,
+      "artifacts": [
+        "01a0b7fd-c878-72b0-abc1-213a850e7bc6"
+      ],
+      "pre_candidate_snapshot": null,
+      "post_candidate_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "error": null,
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "ModelCallRecord",
+    "value": {
+      "schema_name": "ModelCallRecord",
+      "schema_version": 1,
+      "model_call_id": "01a0b7fd-c878-7a66-8048-93c745ecedb2",
+      "run_id": "01a0b7fd-c877-794e-b900-b41fbac76b4b",
+      "route": "primary",
+      "provider": "anthropic",
+      "model_identity": "claude-sonnet-5",
+      "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "status": "SUCCESS",
+      "started_at": "2026-09-19T00:00:00Z",
+      "finished_at": "2026-09-19T00:00:00Z",
+      "input_tokens": 10,
+      "output_tokens": 20,
+      "continuation_state_digest": null,
+      "artifacts": [],
+      "error": null,
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "SubagentExecutionRecord",
+    "value": {
+      "schema_name": "SubagentExecutionRecord",
+      "schema_version": 1,
+      "work_package_id": "01a0b7fd-c878-7e87-a4cf-869a4d54e0eb",
+      "work_package_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "parent_run_id": "01a0b7fd-c877-794e-b900-b41fbac76b4b",
+      "child_worktree_identity": "child-wt",
+      "status": "COMPLETED",
+      "dispatched_at": "2026-09-19T00:00:00Z",
+      "completed_at": "2026-09-19T00:00:00Z",
+      "result_kind": "PATCH_ARTIFACT",
+      "result_commit": null,
+      "result_patch_artifact_id": "01a0b7fd-c878-72b0-abc1-213a850e7bc6",
+      "evidence_artifact_ids": [
+        "01a0b7fd-c878-72b0-abc1-213a850e7bc6"
+      ],
+      "integrated": true,
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "AcceptanceRequest",
+    "value": {
+      "schema_name": "AcceptanceRequest",
+      "schema_version": 1,
+      "acceptance_request_id": "01a0b7fd-c878-7fe6-bdb8-ed55b449617a",
+      "run_id": "01a0b7fd-c877-794e-b900-b41fbac76b4b",
+      "candidate_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "change_revision_id": "01a0b7fd-c878-70c2-9f1e-10ad472ecfd2",
+      "strategy": "MERGE",
+      "assumed_destination_identity": "sha1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "requested_at": "2026-09-19T00:00:00Z",
+      "approval_id": "01a0b7fd-c878-7705-be06-d505603ea2ad",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "IntegrationRecord",
+    "value": {
+      "schema_name": "IntegrationRecord",
+      "schema_version": 1,
+      "integration_id": "01a0b7fd-c878-78aa-a981-73e5210e9095",
+      "run_id": "01a0b7fd-c877-794e-b900-b41fbac76b4b",
+      "candidate_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "strategy": "MERGE",
+      "status": "COMPLETED",
+      "destination_before": "sha1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "destination_after": "sha1:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "started_at": "2026-09-19T00:00:00Z",
+      "completed_at": "2026-09-19T00:00:00Z",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "QualifiedDefault",
+    "value": {
+      "schema_name": "QualifiedDefault",
+      "schema_version": 1,
+      "qualified_default_id": "01a0b7fd-c878-78c2-8164-e3a35ae8a3d4",
+      "experiment_id": "01a0b7fd-c878-78e6-9af9-1d7010fb2409",
+      "scope": "tier.classifier",
+      "effective_version": "v2",
+      "evidence_digests": [
+        "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ],
+      "rollback_target": null,
+      "promoted_by": "USER",
+      "promoted_at": "2026-09-19T00:00:00Z",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unexpected_field": "x"
+    }
+  },
+  {
+    "def": "GoalContract",
+    "value": {
+      "schema_name": "GoalContract",
+      "schema_version": 1,
+      "goal_id": "01a0b7fd-c877-7750-a246-28cc4c878ea2",
+      "goal_revision_id": "01a0b7fd-c878-7554-b8ef-b73affa16037",
+      "parent_revision_id": null,
+      "desired_outcome": "done",
+      "constraints": [
+        "c"
+      ],
+      "acceptance_criteria": [
+        {
+          "criterion_id": "AC-1",
+          "text": "does the thing",
+          "mandatory": true,
+          "verification_class": "BEHAVIORAL",
+          "source": "USER",
+          "source_ref": null,
+          "success_semantics": {
+            "mode": "ALL",
+            "claim_refs": [
+              "c1"
+            ],
+            "threshold": null,
+            "allow_waiver": false
+          }
+        }
+      ],
+      "uncertainties": [
+        {
+          "uncertainty_id": "U-1",
+          "question": "is it fine",
+          "resolution_class": "DETERMINISTIC",
+          "status": "RESOLVED",
+          "resolution": "yes",
+          "resolution_evidence": [
+            "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          ],
+          "blocking": false
+        }
+      ],
+      "created_at": "2026-09-19T00:00:00Z",
+      "source": "USER",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  {
+    "def": "RunRecord",
+    "value": {
+      "schema_name": "RunRecord",
+      "schema_version": 1,
+      "run_id": "01a0b7fd-c877-794e-b900-b41fbac76b4b",
+      "state": "NOT_A_REAL_STATE",
+      "run_version": 0,
+      "goal_revision_id": null,
+      "change_revision_id": null,
+      "repository_snapshot_digest": null,
+      "candidate_snapshot_digest": null,
+      "config_digest": null,
+      "policy_digest": null,
+      "resume_target_state": null,
+      "created_at": "2026-09-19T00:00:00Z",
+      "updated_at": "2026-09-19T00:00:00Z",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  {
+    "def": "VerificationResult",
+    "value": {
+      "schema_name": "VerificationResult",
+      "schema_version": 1,
+      "check_id": "01a0b7fd-c878-72e7-a3de-55313aea13ea",
+      "plan_id": "01a0b7fd-c878-7f91-a69d-9e95e80c375c",
+      "candidate_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "check_type": "FOCUSED",
+      "status": "PASS",
+      "started_at": "2026-09-19T00:00:00Z",
+      "finished_at": "2026-09-19T00:00:00Z",
+      "tool_call_ids": [
+        "01a0b7fd-c878-770e-9e64-58f1cc276ae7"
+      ],
+      "artifact_ids": [
+        "01a0b7fd-c878-72b0-abc1-213a850e7bc6"
+      ],
+      "claim_refs": [
+        "c1"
+      ],
+      "reason_code": null,
+      "digest": "not-a-digest"
+    }
+  },
+  {
+    "def": "ApprovalGrant",
+    "value": {
+      "schema_name": "ApprovalGrant",
+      "schema_version": 1,
+      "approval_id": "01a0b7fd-c878-7705-be06-d505603ea2ad",
+      "request_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "disposition": "ALLOW_ONCE",
+      "actor_type": "USER",
+      "actor_id": "u1",
+      "issued_at": "2026-09-19T00:00:00Z",
+      "expires_at": null,
+      "revoked_at": null,
+      "consumption_limit": 1,
+      "consumed_count": 0,
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  {
+    "def": "ChangeContract",
+    "value": {
+      "schema_name": "ChangeContract",
+      "schema_version": 1,
+      "change_id": "not-a-uuid7",
+      "change_revision_id": "01a0b7fd-c878-70c2-9f1e-10ad472ecfd2",
+      "parent_revision_id": null,
+      "goal_revision_id": "01a0b7fd-c878-7554-b8ef-b73affa16037",
+      "base_repository_snapshot": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "summary": "s",
+      "allowed_resources": [
+        {
+          "kind": "PATH",
+          "match": "EXACT",
+          "value": {
+            "path": "src/x.py"
+          }
+        }
+      ],
+      "required_effects": [
+        "READ"
+      ],
+      "acceptance_criteria": [
+        {
+          "criterion_id": "AC-1",
+          "goal_revision_id": "01a0b7fd-c878-7554-b8ef-b73affa16037"
+        }
+      ],
+      "verification_plan_id": "01a0b7fd-c878-7f91-a69d-9e95e80c375c",
+      "created_at": "2026-09-19T00:00:00Z",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  {
+    "def": "VerificationPlan",
+    "value": {
+      "schema_name": "VerificationPlan",
+      "schema_version": 1,
+      "plan_id": "01a0b7fd-c878-7f91-a69d-9e95e80c375c",
+      "change_revision_id": "01a0b7fd-c878-70c2-9f1e-10ad472ecfd2",
+      "candidate_binding": "LATE_BOUND",
+      "checks": [
+        {
+          "check_id": "01a0b7fd-c878-72e7-a3de-55313aea13ea",
+          "name": "n",
+          "check_type": "FOCUSED",
+          "required": true,
+          "mechanism": {
+            "kind": "NOT_A_KIND"
+          },
+          "expected_effects": [
+            "READ"
+          ],
+          "resource_scope": [
+            {
+              "kind": "PATH",
+              "match": "EXACT",
+              "value": {
+                "path": "src/x.py"
+              }
+            }
+          ],
+          "timeout_ms": 1000,
+          "success_predicate": {
+            "kind": "EXIT_CODE_SET",
+            "exit_codes": [
+              0
+            ]
+          },
+          "feasibility_policy": "FAIL",
+          "criterion_refs": [
+            "AC-1"
+          ],
+          "identity_dependencies": [
+            "CANDIDATE_SNAPSHOT"
+          ]
+        }
+      ],
+      "intent_review": {
+        "reviewer_route": "reviewer",
+        "criterion_refs": [
+          "AC-1"
+        ],
+        "required": true
+      },
+      "post_integration_checks": [],
+      "created_at": "2026-09-19T00:00:00Z",
+      "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  }
+]

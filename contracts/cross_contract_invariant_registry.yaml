@@ -1,0 +1,314 @@
+# CrossContractInvariantRegistry v1 (Unified Implementation Blueprint 9.7).
+# Owner: repository foundation. The sole authoritative registry of the
+# minimum cross-contract invariant set. Every entry names its owning
+# contracts, failure disposition, and executable test mapping; a release
+# MUST fail if any required invariant has no executable test mapping.
+$schema: https://agentic-coding-harness.dev/contracts/cross_contract_invariant_registry.schema.json
+x-contract-name: CrossContractInvariantRegistry
+x-contract-version: 1
+
+categories:
+  - IDENTITY
+  - GOAL
+  - REVISION
+  - APPROVAL
+  - STATE
+  - ACCEPT
+  - SECURITY
+  - RESOURCE
+  - WORKTREE
+  - EVENT
+  - TOOL
+  - VERIFY
+  - SECRET
+
+invariants:
+  - id: INV-IDENTITY-001
+    category: IDENTITY
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      Every VerificationResult.candidate_snapshot equals the exact
+      CandidateSnapshot against which its evidence was produced.
+    owning_contracts: [DomainSchemas, VerificationProtocol]
+    failure_disposition: "invalidate result; block success"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_identity_001_matching_snapshot_satisfies
+      - tests/test_cross_contract_invariants.py::test_inv_identity_001_mismatched_snapshot_violates
+    checker_ref: agentic_harness._invariants.inv_identity_001
+
+  - id: INV-IDENTITY-002
+    category: IDENTITY
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      Every EvidenceManifest.change_revision_id and candidate_snapshot must
+      match the currently governed Change revision and candidate.
+    owning_contracts: [DomainSchemas]
+    failure_disposition: "RECONCILIATION_REQUIRED or re-verification"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_identity_002_matching_governed_state_satisfies
+      - tests/test_cross_contract_invariants.py::test_inv_identity_002_stale_change_revision_violates
+    checker_ref: agentic_harness._invariants.inv_identity_002
+
+  - id: INV-GOAL-001
+    category: GOAL
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      A ChangeContract must reference an existing Goal revision belonging to
+      the same run.
+    owning_contracts: [DomainSchemas]
+    failure_disposition: "reject persistence"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_goal_001_known_revision_in_same_run_satisfies
+      - tests/test_cross_contract_invariants.py::test_inv_goal_001_unknown_revision_violates
+    checker_ref: agentic_harness._invariants.inv_goal_001
+
+  - id: INV-REVISION-001
+    category: REVISION
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      A material Goal/Change revision invalidates dependent approvals,
+      plans, checks, reviews, and evidence whose bound identity is no
+      longer equal.
+    owning_contracts: [DomainSchemas]
+    failure_disposition: "remove them from current-valid view; history remains append-only"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_revision_001_unchanged_identity_stays_current
+      - tests/test_cross_contract_invariants.py::test_inv_revision_001_changed_identity_is_invalidated
+    checker_ref: agentic_harness._invariants.inv_revision_001
+
+  - id: INV-APPROVAL-001
+    category: APPROVAL
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      A grant authorizes only the ApprovalRequest digest to which it is
+      bound.
+    owning_contracts: [DomainSchemas, PolicyContract]
+    failure_disposition: "policy denied / approval required"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_approval_001_matching_request_digest_satisfies
+      - tests/test_cross_contract_invariants.py::test_inv_approval_001_mismatched_request_digest_violates
+    checker_ref: agentic_harness._invariants.inv_approval_001
+
+  - id: INV-APPROVAL-002
+    category: APPROVAL
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      Changed effects, normalized resources, arguments, credential
+      exposure, reversibility, or tool schema identity require a new
+      ApprovalRequest.
+    owning_contracts: [DomainSchemas, PolicyContract]
+    failure_disposition: "policy denied / approval required"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_approval_002_unchanged_request_does_not_require_new_approval
+      - tests/test_cross_contract_invariants.py::test_inv_approval_002_changed_effects_require_new_approval
+    checker_ref: agentic_harness._invariants.inv_approval_002
+
+  - id: INV-STATE-001
+    category: STATE
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      Only StateMachine v1 may authorize a runtime-state transition.
+    owning_contracts: [StateMachine]
+    failure_disposition: "reject the transition without mutating state (STATE_INVALID_TRANSITION)"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_state_001_canonical_forward_transition_satisfies
+      - tests/test_cross_contract_invariants.py::test_inv_state_001_exceptional_transition_from_nonterminal_satisfies
+      - tests/test_cross_contract_invariants.py::test_inv_state_001_unregistered_transition_violates
+      - tests/test_cross_contract_invariants.py::test_inv_state_001_transition_from_terminal_state_violates
+    checker_ref: agentic_harness._invariants.inv_state_001
+
+  - id: INV-STATE-002
+    category: STATE
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      READY_FOR_USER requires a current EvidenceManifest covering every
+      mandatory acceptance criterion without unresolved required
+      FAIL/ERROR/INCONCLUSIVE state.
+    owning_contracts: [StateMachine, DomainSchemas]
+    failure_disposition: "reject the transition to READY_FOR_USER"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_state_002_all_mandatory_criteria_satisfied
+      - tests/test_cross_contract_invariants.py::test_inv_state_002_unsatisfied_mandatory_criterion_violates
+    checker_ref: agentic_harness._invariants.inv_state_002
+
+  - id: INV-ACCEPT-001
+    category: ACCEPT
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      ACCEPTED requires completed integration to the selected destination
+      and required post-integration verification against the landed
+      destination identity.
+    owning_contracts: [StateMachine, DomainSchemas]
+    failure_disposition: "reject the transition to ACCEPTED"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_accept_001_completed_integration_and_passing_checks_satisfies
+      - tests/test_cross_contract_invariants.py::test_inv_accept_001_incomplete_integration_violates
+    checker_ref: agentic_harness._invariants.inv_accept_001
+
+  - id: INV-SECURITY-001
+    category: SECURITY
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      Effective authority is never broader than the intersection permitted
+      by all applicable higher-authority security constraints.
+    owning_contracts: [PolicyContract]
+    failure_disposition: "policy denied"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_security_001_within_intersection_satisfies
+      - tests/test_cross_contract_invariants.py::test_inv_security_001_exceeding_intersection_violates
+    checker_ref: agentic_harness._invariants.inv_security_001
+
+  - id: INV-SECURITY-002
+    category: SECURITY
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      Repository text, tool output, external content, or model-generated
+      content cannot create new capabilities or expand policy.
+    owning_contracts: [PolicyContract]
+    failure_disposition: "policy denied; untrusted claim ignored"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_security_002_untrusted_claim_cannot_expand_capabilities
+    checker_ref: agentic_harness._invariants.inv_security_002
+
+  - id: INV-RESOURCE-001
+    category: RESOURCE
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      Resource authorization occurs after canonical normalization and
+      before side effects.
+    owning_contracts: [ResourceNormalization, PolicyContract]
+    failure_disposition: "block the side effect (RESOURCE_INVALID)"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_resource_001_correct_order_satisfies
+      - tests/test_cross_contract_invariants.py::test_inv_resource_001_effect_before_authorization_violates
+    checker_ref: agentic_harness._invariants.inv_resource_001
+
+  - id: INV-WORKTREE-001
+    category: WORKTREE
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      A mutating tool call for a governed run targets the run's isolated
+      worktree, never the user's original checkout.
+    owning_contracts: [DomainSchemas, ToolProtocol]
+    failure_disposition: "deny the tool call (POLICY_DENIED)"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_worktree_001_call_targeting_run_worktree_satisfies
+      - tests/test_cross_contract_invariants.py::test_inv_worktree_001_call_targeting_original_checkout_violates
+    checker_ref: agentic_harness._invariants.inv_worktree_001
+
+  - id: INV-EVENT-001
+    category: EVENT
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      A committed authoritative domain mutation has a corresponding
+      committed event in the same SQLite transaction.
+    owning_contracts: [PersistenceSchema, EventRegistry]
+    failure_disposition: "roll back the domain mutation"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_event_001_mutation_with_committed_event_satisfies
+      - tests/test_cross_contract_invariants.py::test_inv_event_001_mutation_without_committed_event_violates
+    checker_ref: agentic_harness._invariants.inv_event_001
+
+  - id: INV-EVENT-002
+    category: EVENT
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      Event sequence numbers are strictly increasing per run with no
+      duplicate committed sequence number.
+    owning_contracts: [EventRegistry, PersistenceSchema]
+    failure_disposition: "reject the event write (PERSIST_CORRUPT)"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_event_002_strictly_increasing_sequence_satisfies
+      - tests/test_cross_contract_invariants.py::test_inv_event_002_duplicate_sequence_violates
+    checker_ref: agentic_harness._invariants.inv_event_002
+
+  - id: INV-TOOL-001
+    category: TOOL
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      Tool result success cannot be emitted for a partially applied atomic
+      operation.
+    owning_contracts: [ToolProtocol]
+    failure_disposition: "the tool MUST NOT return SUCCESS"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_tool_001_success_with_atomicity_met_satisfies
+      - tests/test_cross_contract_invariants.py::test_inv_tool_001_success_without_atomicity_violates
+    checker_ref: agentic_harness._invariants.inv_tool_001
+
+  - id: INV-VERIFY-001
+    category: VERIFY
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      An unrunnable mandatory check cannot be represented as PASS.
+    owning_contracts: [VerificationProtocol]
+    failure_disposition: "the check MUST report FAIL, ERROR, or INCONCLUSIVE, never PASS (VERIFY_INCONCLUSIVE)"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_verify_001_runnable_check_may_pass
+      - tests/test_cross_contract_invariants.py::test_inv_verify_001_unrunnable_mandatory_check_cannot_pass
+    checker_ref: agentic_harness._invariants.inv_verify_001
+
+  - id: INV-VERIFY-002
+    category: VERIFY
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      A candidate mutation invalidates all verification/review evidence
+      bound to the prior candidate identity unless the check contract
+      explicitly proves candidate-independence.
+    owning_contracts: [VerificationProtocol, DomainSchemas]
+    failure_disposition: "VERIFY_STALE_EVIDENCE; re-verification required"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_verify_002_unchanged_dependencies_remain_current
+      - tests/test_cross_contract_invariants.py::test_inv_verify_002_changed_candidate_snapshot_invalidates
+      - tests/test_cross_contract_invariants.py::test_inv_verify_002_candidate_independent_check_survives_mutation
+    checker_ref: agentic_harness._invariants.inv_verify_002
+
+  - id: INV-SECRET-001
+    category: SECRET
+    enforcement_status: AWAITING_RUNTIME_INTEGRATION
+    required: true
+    severity: BLOCKING
+    statement: >-
+      Secret plaintext must not appear in ordinary event payloads, JSONL
+      projections, model transcripts, or persisted tool outputs.
+    owning_contracts: [EventRegistry, ToolProtocol, PersistenceSchema]
+    failure_disposition: "redact before persistence/egress; never store plaintext and later clean it"
+    test_refs:
+      - tests/test_cross_contract_invariants.py::test_inv_secret_001_payload_without_secret_satisfies
+      - tests/test_cross_contract_invariants.py::test_inv_secret_001_nested_secret_leak_violates
+    checker_ref: agentic_harness._invariants.inv_secret_001

@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-coding-harness.dev/contracts/policy_contract.schema.json",
+  "x-contract-name": "PolicyContract",
+  "x-contract-version": 1,
+  "$comment": "Blueprint 3.7, 9.12 (Contract 9), 10.11 (Data Redaction Closure). Sole authoritative source for the closed Effect set, the Trust class list, the decision algebra dimensions/results/rules, approval-binding semantics, and the redaction-source registry. Only src/agentic_harness/_policy.py may decide a policy verdict, and src/agentic_harness/_classification.py may redact a value; both consult this document rather than a second hand-maintained copy. Resource kinds/shapes are owned by ResourceNormalization v1 (resource_normalization.schema.json), not duplicated here.",
+  "title": "PolicyContract v1",
+  "description": "Effect set, trust classes, decision algebra, approval binding, and redaction closure.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "x-contract-name", "x-contract-version",
+    "effects", "trust_classes", "decision_algebra", "approval_binding", "redaction"
+  ],
+  "properties": {
+    "$schema": { "const": "https://agentic-coding-harness.dev/contracts/policy_contract.schema.json" },
+    "x-contract-name": { "const": "PolicyContract" },
+    "x-contract-version": { "type": "integer", "minimum": 1 },
+
+    "effects": {
+      "type": "array",
+      "description": "9.12.1/3.7, exact closed set. Unknown effects deny.",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/Effect" },
+      "const": ["READ", "WORKSPACE_WRITE", "PROCESS_EXEC", "SHELL_INTERPRETATION", "NETWORK", "DATA_EGRESS", "EXTERNAL_READ", "EXTERNAL_WRITE", "SECRET_ACCESS", "DESTRUCTIVE", "PRIVILEGED"]
+    },
+
+    "trust_classes": {
+      "type": "array",
+      "description": "3.7, exact closed set. Trust is provenance metadata, not a scalar permission score; no untrusted class can authorize an effect.",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/TrustClass" },
+      "const": ["SYSTEM_TRUSTED", "USER_TRUSTED", "PROJECT_POLICY", "REPOSITORY_UNTRUSTED", "TOOL_OUTPUT_UNTRUSTED", "EXTERNAL_UNTRUSTED", "MODEL_GENERATED"]
+    },
+
+    "decision_algebra": { "$ref": "#/$defs/DecisionAlgebra" },
+    "approval_binding": { "$ref": "#/$defs/ApprovalBinding" },
+    "redaction": { "$ref": "#/$defs/RedactionClosure" }
+  },
+
+  "$defs": {
+    "Effect": {
+      "type": "string",
+      "enum": ["READ", "WORKSPACE_WRITE", "PROCESS_EXEC", "SHELL_INTERPRETATION", "NETWORK", "DATA_EGRESS", "EXTERNAL_READ", "EXTERNAL_WRITE", "SECRET_ACCESS", "DESTRUCTIVE", "PRIVILEGED"]
+    },
+
+    "TrustClass": {
+      "type": "string",
+      "enum": ["SYSTEM_TRUSTED", "USER_TRUSTED", "PROJECT_POLICY", "REPOSITORY_UNTRUSTED", "TOOL_OUTPUT_UNTRUSTED", "EXTERNAL_UNTRUSTED", "MODEL_GENERATED"]
+    },
+
+    "UntrustedTrustClass": {
+      "type": "array",
+      "description": "3.7/9.12.4: the subset of trust_classes that can never authorize an effect on its own.",
+      "const": ["REPOSITORY_UNTRUSTED", "TOOL_OUTPUT_UNTRUSTED", "EXTERNAL_UNTRUSTED", "MODEL_GENERATED"]
+    },
+
+    "PolicyDecision": {
+      "type": "string",
+      "enum": ["ALLOW", "APPROVAL_REQUIRED", "DENY", "BLOCKED_CAPABILITY"]
+    },
+
+    "DecisionAlgebra": {
+      "type": "object",
+      "description": "9.12.5.",
+      "additionalProperties": false,
+      "required": ["dimensions", "results", "rules", "untrusted_trust_classes"],
+      "properties": {
+        "dimensions": {
+          "type": "array",
+          "description": "A policy decision evaluates the conjunction of these dimensions, exact order.",
+          "const": [
+            "requested_effects", "normalized_resources", "provenance_trust",
+            "data_classification_taint", "reversibility", "sandbox_enforceability",
+            "applicable_approvals", "higher_authority_denies"
+          ]
+        },
+        "results": {
+          "type": "array",
+          "const": ["ALLOW", "APPROVAL_REQUIRED", "DENY", "BLOCKED_CAPABILITY"]
+        },
+        "rules": {
+          "type": "array",
+          "minItems": 5,
+          "items": { "type": "string", "minLength": 1 },
+          "const": [
+            "explicit deny wins",
+            "narrower scope wins over broader scope",
+            "unavailable enforcement yields BLOCKED_CAPABILITY, never an implicit widening",
+            "an approval can satisfy only an approval requirement already permitted by policy; it cannot override a hard deny",
+            "derived data inherits the maximum governing sensitivity/taint of its inputs until an explicit declassification mechanism exists; v1 defines no automatic declassification by summarization"
+          ]
+        },
+        "untrusted_trust_classes": { "$ref": "#/$defs/UntrustedTrustClass" }
+      }
+    },
+
+    "ApprovalScope": {
+      "type": "string",
+      "enum": ["ALLOW_ONCE", "ALLOW_RUN"]
+    },
+
+    "ApprovalBinding": {
+      "type": "object",
+      "description": "9.12.6.",
+      "additionalProperties": false,
+      "required": ["binding_fields", "allow_once_semantics", "allow_run_semantics", "rebinding_rule"],
+      "properties": {
+        "binding_fields": {
+          "type": "array",
+          "description": "An approval request binds to exactly these dimensions. Any material difference in any one requires a new approval (INV-APPROVAL-002).",
+          "const": ["effect_set", "normalized_resources", "argument_digest", "credential_exposure", "reversibility", "run_id", "tool_call_identity", "tool_schema_digest"]
+        },
+        "allow_once_semantics": {
+          "type": "string",
+          "const": "ALLOW_ONCE is consumed atomically immediately before the authorized side effect begins. A tool failure after consumption does not restore the grant."
+        },
+        "allow_run_semantics": {
+          "type": "string",
+          "const": "ALLOW_RUN remains usable until expiry/revocation but only for requests matching its explicit scope predicate."
+        },
+        "rebinding_rule": {
+          "type": "string",
+          "const": "any material difference in a binding field requires a new ApprovalRequest; no implicit reuse across a widened or altered request"
+        }
+      }
+    },
+
+    "RedactionSourceKind": {
+      "type": "string",
+      "enum": ["SCHEMA_SENSITIVE_FIELD", "SECRET_BROKER_EXACT_MATCH", "REGISTERED_CREDENTIAL_FORMAT"]
+    },
+
+    "CredentialFormat": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "pattern"],
+      "properties": {
+        "label": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+        "pattern": { "type": "string", "minLength": 1, "description": "Python `re` pattern recognizing this credential format's textual shape." }
+      }
+    },
+
+    "RedactionClosure": {
+      "type": "object",
+      "description": "10.11. V1 redaction combines deterministic structured redaction with exact-known-secret matching. Entropy-only detection is advisory and MUST NOT be the sole classification/redaction mechanism.",
+      "additionalProperties": false,
+      "required": ["sources", "entropy_only_is_advisory_only", "derived_representation_rule", "redaction_points", "marker_format", "credential_formats"],
+      "properties": {
+        "sources": {
+          "type": "array",
+          "const": ["SCHEMA_SENSITIVE_FIELD", "SECRET_BROKER_EXACT_MATCH", "REGISTERED_CREDENTIAL_FORMAT"]
+        },
+        "credential_formats": {
+          "type": "array",
+          "description": "10.11 source 3 ('registered credential formats required by enabled adapters'): the sole authoritative registry of recognized credential-string formats. src/agentic_harness/_classification.py loads this rather than hand-maintaining a second copy (Canonical Identity Rules).",
+          "items": { "$ref": "#/$defs/CredentialFormat" }
+        },
+        "entropy_only_is_advisory_only": { "type": "boolean", "const": true },
+        "derived_representation_rule": {
+          "type": "string",
+          "const": "the broker may register deterministic derived representations of an exact secret (e.g. base64) only when the transformation is explicitly supported; unbounded transformation guessing is prohibited"
+        },
+        "redaction_points": {
+          "type": "array",
+          "description": "10.11: redaction occurs before every listed admission/egress point, exact set.",
+          "uniqueItems": true,
+          "const": ["EVENT_PERSISTENCE", "TOOL_OUTPUT_PERSISTENCE", "MODEL_CONTEXT_ADMISSION", "TELEMETRY_EXPORT", "CLI_RENDERING"]
+        },
+        "marker_format": {
+          "type": "string",
+          "const": "<REDACTED:{secret_id}>",
+          "description": "Typed redaction marker replacing a matched secret value; field shape is preserved where practical. Redaction MUST NOT store plaintext and later 'clean' a projection (9.10.3/10.11)."
+        }
+      }
+    }
+  }
+}

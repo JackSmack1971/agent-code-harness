@@ -1,0 +1,6 @@
+interface:
+  display_name: "Reviewing Intent"
+  short_description: "Perform independent intent conformance against Goal/Change acceptance criteria without trusting the implementer's narrative."
+  default_prompt: "Use $reviewing-intent for this task."
+policy:
+  allow_implicit_invocation: false

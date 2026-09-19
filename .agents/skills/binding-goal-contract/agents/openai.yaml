@@ -1,0 +1,6 @@
+interface:
+  display_name: "Binding Goal Contract"
+  short_description: "Convert a software objective into a precise evidence-bound GoalContract or identify blocking user-resolvable ambiguity. Use at the start of "
+  default_prompt: "Use $binding-goal-contract for this task."
+policy:
+  allow_implicit_invocation: true

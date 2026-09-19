@@ -1,0 +1,11 @@
+[
+  { "def": "Effect", "value": "READ" },
+  { "def": "Effect", "value": "SHELL_INTERPRETATION" },
+  { "def": "Effect", "value": "PRIVILEGED" },
+  { "def": "TrustClass", "value": "SYSTEM_TRUSTED" },
+  { "def": "TrustClass", "value": "MODEL_GENERATED" },
+  { "def": "PolicyDecision", "value": "ALLOW" },
+  { "def": "PolicyDecision", "value": "BLOCKED_CAPABILITY" },
+  { "def": "ApprovalScope", "value": "ALLOW_ONCE" },
+  { "def": "RedactionSourceKind", "value": "SECRET_BROKER_EXACT_MATCH" }
+]

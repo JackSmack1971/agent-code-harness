@@ -1,0 +1,192 @@
+# ConfigurationSchema v1 (Unified Implementation Blueprint 9.9, 10.6).
+# Owner: repository foundation. Sole authoritative source for the canonical
+# top-level configuration tree, migration aliases, ordinary precedence order,
+# canonical file locations, registered environment overrides, required
+# fail-safe defaults, and the secret-reference source registry. Only
+# src/agentic_harness/_config.py may resolve/merge configuration; it
+# consults this document (and configuration_schema.schema.json's
+# EffectiveConfiguration $def) rather than a second hand-maintained copy.
+$schema: https://agentic-coding-harness.dev/contracts/configuration_schema.schema.json
+x-contract-name: ConfigurationSchema
+x-contract-version: 1
+
+# 9.9.2, exact Blueprint order.
+canonical_top_level_keys:
+  - runtime
+  - workspace
+  - sandbox
+  - policy
+  - providers
+  - routes
+  - context
+  - retrieval
+  - verification
+  - repository_commands
+  - network
+  - data_egress
+  - secrets
+  - parsers
+  - memory
+  - skills
+  - events
+  - telemetry
+  - retention
+  - approvals
+  - acceptance
+  - mcp
+  - doctor
+  - extensions
+
+# 9.9.2/10.6: read-only migration aliases. Alias and canonical key present
+# together in one source (or resolving the same logical key via conflicting
+# aliases across sources) is CONFIG_ALIAS_CONFLICT.
+aliases:
+  run: runtime
+  routing: routes
+
+# 9.9.1, lowest to highest. Security authority is NOT ordinary precedence.
+precedence_order:
+  - built_in_defaults
+  - system_config
+  - user_config
+  - repository_config
+  - explicit_config_file
+  - environment_overrides
+  - cli_overrides
+
+# 10.6.1.
+file_locations:
+  linux:
+    system: /etc/agentic-harness/config.toml
+    user_primary: $XDG_CONFIG_HOME/agentic-harness/config.toml
+    user_fallback: ~/.config/agentic-harness/config.toml
+  macos:
+    system: "/Library/Application Support/Agentic Harness/config.toml"
+    user: "~/Library/Application Support/Agentic Harness/config.toml"
+  windows:
+    system: "%PROGRAMDATA%\\AgenticHarness\\config.toml"
+    user: "%APPDATA%\\AgenticHarness\\config.toml"
+  repository: <repo-root>/.harness/config.toml
+  explicit: --config <path>
+
+# 10.6.2. Environment variables are disabled by default except this
+# registry; an unregistered HARNESS_* variable is not silently admitted.
+env_overrides:
+  - variable: HARNESS_CONFIG
+    target_path: CONFIG_FILE
+    kind: CONFIG_FILE_PATH
+  - variable: HARNESS_LOG_LEVEL
+    target_path: runtime.log_level
+    kind: SCALAR_OVERRIDE
+  - variable: HARNESS_JSON
+    target_path: runtime.machine_output
+    kind: SCALAR_OVERRIDE
+  - variable: HARNESS_PROVIDER_OPENAI_KEY
+    target_path: providers.openai.api_key
+    kind: SECRET_REFERENCE
+  - variable: HARNESS_PROVIDER_ANTHROPIC_KEY
+    target_path: providers.anthropic.api_key
+    kind: SECRET_REFERENCE
+  - variable: HARNESS_PROVIDER_OPENROUTER_KEY
+    target_path: providers.openrouter.api_key
+    kind: SECRET_REFERENCE
+
+# 9.9.3 required fail-safe defaults, extended to a complete EffectiveConfiguration
+# instance per 10.6.3's "every top-level section MUST have an explicit object
+# schema" closure rule. src/agentic_harness/_config.py injects this literal
+# object as the lowest (built_in_defaults) precedence layer.
+required_defaults:
+  runtime:
+    headless: false
+    execution_tier: auto
+    max_subagent_depth: 1
+    machine_output: false
+    log_level: INFO
+    max_run_seconds: null
+  workspace:
+    root: null
+    preserve_on_failure: true
+    mutation_mode: isolated_worktree
+    preserve_original_checkout: true
+  sandbox:
+    backend: auto
+    require_non_root: true
+    host_fallback: explicit_only
+    require_isolation: true
+    cpu_limit: null
+    memory_limit_mb: null
+    pids_limit: null
+  policy:
+    policy_files: []
+    default_decision: DENY
+    unknown_effect: deny
+    unknown_resource_type: deny
+    repository_text_can_expand_authority: false
+  providers: {}
+  routes:
+    primary: null
+    low_cost_candidates: []
+    stronger_candidates: []
+    reviewer: null
+  context:
+    max_input_tokens: 100000
+    max_artifact_inline_bytes: 1048576
+  retrieval:
+    lexical: true
+    structural: true
+    trajectory: true
+    semantic: false
+  verification:
+    focused_required: true
+    broad_required: true
+    structural_required: true
+    intent_review_required: true
+    unrunnable_required_check: inconclusive
+    stale_candidate_evidence: invalidate
+  repository_commands: {}
+  network:
+    default: deny
+    allowed_origins: []
+    scoped_request_on_unenforceable_backend: block
+  data_egress:
+    default: deny
+    maximum_classification: PUBLIC
+    destinations: []
+  secrets: {}
+  parsers:
+    enabled: []
+  memory:
+    enabled: false
+  skills:
+    enabled: false
+  events:
+    jsonl_projection: true
+    projection_path: null
+  telemetry:
+    enabled: false
+    exporter: none
+  retention:
+    event_days: 90
+    artifact_days: 90
+    failed_run_days: 30
+  approvals:
+    headless_behavior: fail
+    default_scope: once
+    mode: interactive
+    grant_ttl_seconds: null
+  acceptance:
+    strategy: squash
+    require_destination_reconciliation: true
+    require_post_integration_verification: true
+  mcp:
+    enabled: false
+  doctor:
+    strict: false
+  extensions: {}
+
+# 9.9.4. Supported secret-reference sources are versioned capabilities; an
+# unknown source fails validation. v1 supports exactly "env" (the registered
+# HARNESS_PROVIDER_*_KEY variables above plus arbitrary operator-declared
+# {"source":"env","name":"..."} references under providers/secrets).
+secret_sources:
+  - env

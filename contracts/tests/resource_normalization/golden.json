@@ -1,0 +1,14 @@
+[
+  { "def": "NormalizedResource", "value": { "kind": "repo_path", "normalized_key": "src/agentic_harness/_config.py", "value": "src/agentic_harness/_config.py" } },
+  { "def": "NormalizedResource", "value": { "kind": "process", "normalized_key": "/usr/bin/git git status", "value": { "executable": "/usr/bin/git", "argv": ["git", "status"], "cwd": "/repo", "script": null, "env_keys": ["PATH"] } } },
+  { "def": "NormalizedResource", "value": { "kind": "network_origin", "normalized_key": "https://api.example.com:443", "value": { "scheme": "https", "host_ascii": "api.example.com", "port": 443 } } },
+  { "def": "NormalizedResource", "value": { "kind": "network_origin", "normalized_key": "https://192.0.2.10:8443", "value": { "scheme": "https", "host_ascii": "192.0.2.10", "port": 8443 } } },
+  { "def": "NormalizedResource", "value": { "kind": "external_service", "normalized_key": "github:create_pull_request:org/repo:pulls", "value": { "provider": "github", "operation": "create_pull_request", "account_scope": "org/repo", "resource_path": "pulls" } } },
+  { "def": "NormalizedResource", "value": { "kind": "secret", "normalized_key": "env:openai_api_key", "value": { "secret_id": "openai_api_key", "broker": "env", "purpose": "provider_auth" } } },
+  { "def": "NormalizedResource", "value": { "kind": "repository_ref", "normalized_key": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:BRANCH:feature/x", "value": { "repo_identity": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "ref_kind": "BRANCH", "ref_name_or_oid": "feature/x" } } },
+  { "def": "NormalizedResource", "value": { "kind": "artifact", "normalized_key": "harness.tool_output:018f1e2e-0000-7000-8000-000000000000", "value": { "namespace": "harness.tool_output", "artifact_id": "018f1e2e-0000-7000-8000-000000000000", "digest": null, "media_type": "text/plain" } } },
+  { "def": "ResourcePattern", "value": { "kind": "repo_path", "match": "PREFIX", "value": "src/" } },
+  { "def": "ResourcePattern", "value": { "kind": "network_origin", "match": "EXACT", "value": "https://api.example.com:443" } },
+  { "def": "ResourceKind", "value": "repo_path" },
+  { "def": "ResourceKind", "value": "artifact" }
+]

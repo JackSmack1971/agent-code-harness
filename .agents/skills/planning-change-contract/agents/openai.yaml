@@ -1,0 +1,6 @@
+interface:
+  display_name: "Planning Change Contract"
+  short_description: "Produce an evidence-bound ChangeContract and VerificationPlan for a Tier 2 or phase-closing repository change."
+  default_prompt: "Use $planning-change-contract for this task."
+policy:
+  allow_implicit_invocation: true

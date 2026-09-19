@@ -1,0 +1,8 @@
+[
+  { "def": "Effect", "value": "WRITE" },
+  { "def": "Effect", "value": "read" },
+  { "def": "TrustClass", "value": "ADMIN" },
+  { "def": "PolicyDecision", "value": "MAYBE" },
+  { "def": "ApprovalScope", "value": "ALLOW_FOREVER" },
+  { "def": "RedactionSourceKind", "value": "ENTROPY_HEURISTIC" }
+]

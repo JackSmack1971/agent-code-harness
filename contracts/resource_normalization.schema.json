@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-coding-harness.dev/contracts/resource_normalization.schema.json",
+  "x-contract-name": "ResourceNormalization",
+  "x-contract-version": 1,
+  "$comment": "Blueprint 9.12.2/9.12.3 and 10.10 (ResourceNormalization v1). Sole authoritative source for the seven normalized resource kinds, the resource-pattern grammar, the repo_path normalization step sequence, and the required adversarial vector coverage list. Only src/agentic_harness/_resource_normalization.py may declare a resource kind's canonical structured shape; the domain_schemas.schema.json NormalizedResource $def and semantic_types.schema.json ResourcePattern $def remain generic structural carriers that defer to this contract rather than duplicating it (Canonical Identity Rules).",
+  "title": "ResourceNormalization v1",
+  "description": "Typed resource kinds, canonical per-kind structures, resource-pattern grammar, repo_path normalization procedure, and adversarial vector registry. Free-form resource strings are forbidden at policy boundaries (10.10).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "x-contract-name", "x-contract-version",
+    "resource_kinds", "pattern_grammar", "repo_path_normalization_steps", "adversarial_vectors"
+  ],
+  "properties": {
+    "$schema": { "const": "https://agentic-coding-harness.dev/contracts/resource_normalization.schema.json" },
+    "x-contract-name": { "const": "ResourceNormalization" },
+    "x-contract-version": { "type": "integer", "minimum": 1 },
+
+    "resource_kinds": {
+      "type": "array",
+      "description": "9.12.2/10.10.2, exact order.",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/ResourceKind" },
+      "const": ["repo_path", "process", "network_origin", "external_service", "secret", "repository_ref", "artifact"]
+    },
+
+    "pattern_grammar": {
+      "type": "object",
+      "description": "10.10.1. Regex matching is not supported in v1 policy patterns. PREFIX is permitted only for hierarchical kinds. Glob is the harness-defined path glob (*, ?, **) applied after canonical normalization; never delegated to a shell.",
+      "additionalProperties": false,
+      "required": ["match_kinds", "prefix_eligible_kinds", "glob_tokens"],
+      "properties": {
+        "match_kinds": { "type": "array", "const": ["EXACT", "PREFIX", "GLOB"] },
+        "prefix_eligible_kinds": { "type": "array", "uniqueItems": true, "items": { "type": "string" }, "const": ["repo_path", "artifact", "external_service"] },
+        "glob_tokens": { "type": "array", "const": ["*", "?", "**"] }
+      }
+    },
+
+    "repo_path_normalization_steps": {
+      "type": "array",
+      "description": "9.12.3, exact order. src/agentic_harness/_resource_normalization.normalize_repo_path implements this sequence.",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": { "type": "string", "minLength": 1 },
+      "const": [
+        "input must be relative to the governed worktree unless the tool contract explicitly permits another root",
+        "reject NUL and invalid platform path encodings",
+        "collapse '.' components",
+        "reject any '..' that escapes the authorized root",
+        "resolve existing symlinks before authorization",
+        "for creation targets, resolve the nearest existing ancestor and prove the unresolved suffix cannot escape through a symlink race under the tool's atomicity strategy",
+        "compare using platform-appropriate canonical case semantics",
+        "authorize the final resolved target, not only the lexical input"
+      ]
+    },
+
+    "adversarial_vectors": {
+      "type": "array",
+      "description": "10.10.3. Tests MUST cover every listed vector category.",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items": { "type": "string" },
+      "const": [
+        "path_traversal", "symlink_junction_escape", "case_fold_collision", "windows_drive_unc_form",
+        "idna_hostname", "trailing_dot_hostname", "default_port_materialization", "ipv4_ipv6_literal",
+        "redirect_as_new_resource", "process_interpreter_script_ambiguity", "path_shadowing",
+        "environment_injection", "resource_pattern_broadening"
+      ]
+    }
+  },
+
+  "$defs": {
+    "ResourceKind": {
+      "type": "string",
+      "enum": ["repo_path", "process", "network_origin", "external_service", "secret", "repository_ref", "artifact"]
+    },
+
+    "ResourcePattern": {
+      "type": "object",
+      "description": "10.10.1. Authoritative shape; supersedes the generic structural carrier in semantic_types.schema.json#/$defs/ResourcePattern now that this contract exists.",
+      "additionalProperties": false,
+      "required": ["kind", "match", "value"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/ResourceKind" },
+        "match": { "type": "string", "enum": ["EXACT", "PREFIX", "GLOB"] },
+        "value": { "type": "string", "minLength": 1, "description": "Canonical string form (repo_path glob/prefix text, network_origin scheme://host:port, etc.) matched against a NormalizedResource's normalized_key." }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "match": { "const": "PREFIX" } } },
+          "then": { "properties": { "kind": { "enum": ["repo_path", "artifact", "external_service"] } } }
+        }
+      ]
+    },
+
+    "RepoPathResource": {
+      "type": "string",
+      "description": "Canonical repo-relative POSIX path after lexical normalization and symlink-safe resolution against the governed worktree.",
+      "$ref": "semantic_types.schema.json#/$defs/CanonicalPath"
+    },
+
+    "ProcessResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["executable", "argv", "cwd", "script", "env_keys"],
+      "properties": {
+        "executable": { "type": "string", "minLength": 1, "description": "Canonical absolute executable path (PATH lookup fully resolved before authorization; no PATH shadowing at execution time)." },
+        "argv": { "type": "array", "items": { "type": "string" } },
+        "cwd": { "type": "string", "minLength": 1, "description": "Canonical repo/workspace path." },
+        "script": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "env_keys": { "type": "array", "items": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" }, "description": "Sorted names (never values) of environment variables exposed to the process." }
+      }
+    },
+
+    "NetworkOriginResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scheme", "host_ascii", "port"],
+      "properties": {
+        "scheme": { "type": "string", "enum": ["http", "https"] },
+        "host_ascii": { "type": "string", "minLength": 1, "pattern": "^[^A-Z]*$", "description": "IDNA A-label lowercase, or canonical IP literal. A hostname and an IP literal do NOT normalize identically." },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535, "description": "Explicit integer after default-port materialization (https:443, http:80)." }
+      }
+    },
+
+    "ExternalServiceResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "operation", "account_scope", "resource_path"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "operation": { "type": "string", "minLength": 1 },
+        "account_scope": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] },
+        "resource_path": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "SecretResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["secret_id", "broker", "purpose"],
+      "properties": {
+        "secret_id": { "type": "string", "minLength": 1 },
+        "broker": { "type": "string", "minLength": 1 },
+        "purpose": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "RepositoryRefResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo_identity", "ref_kind", "ref_name_or_oid"],
+      "properties": {
+        "repo_identity": { "type": "string", "minLength": 1 },
+        "ref_kind": { "type": "string", "enum": ["HEAD", "BRANCH", "TAG", "FULL_REF", "OBJECT"] },
+        "ref_name_or_oid": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "ArtifactResource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["namespace", "media_type"],
+      "properties": {
+        "namespace": { "type": "string", "minLength": 1 },
+        "artifact_id": { "anyOf": [{ "$ref": "semantic_types.schema.json#/$defs/ArtifactId" }, { "type": "null" }] },
+        "digest": { "anyOf": [{ "$ref": "semantic_types.schema.json#/$defs/Digest" }, { "type": "null" }] },
+        "media_type": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }] }
+      },
+      "anyOf": [{ "required": ["artifact_id"] }, { "required": ["digest"] }]
+    },
+
+    "NormalizedResource": {
+      "description": "10.10.2 discriminated union by kind. Authoritative shape; literally satisfies domain_schemas.schema.json#/$defs/NormalizedResource's generic (kind, normalized_key, value) carrier (normalized_key := the deterministic canonical string form used for equality/approval-reuse comparisons; value := the kind-specific structure below, an object for every kind except repo_path, which is a bare canonical path string).",
+      "oneOf": [
+        { "type": "object", "additionalProperties": false, "required": ["kind", "normalized_key", "value"], "properties": { "kind": { "const": "repo_path" }, "normalized_key": { "type": "string", "minLength": 1 }, "value": { "$ref": "#/$defs/RepoPathResource" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "normalized_key", "value"], "properties": { "kind": { "const": "process" }, "normalized_key": { "type": "string", "minLength": 1 }, "value": { "$ref": "#/$defs/ProcessResource" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "normalized_key", "value"], "properties": { "kind": { "const": "network_origin" }, "normalized_key": { "type": "string", "minLength": 1 }, "value": { "$ref": "#/$defs/NetworkOriginResource" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "normalized_key", "value"], "properties": { "kind": { "const": "external_service" }, "normalized_key": { "type": "string", "minLength": 1 }, "value": { "$ref": "#/$defs/ExternalServiceResource" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "normalized_key", "value"], "properties": { "kind": { "const": "secret" }, "normalized_key": { "type": "string", "minLength": 1 }, "value": { "$ref": "#/$defs/SecretResource" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "normalized_key", "value"], "properties": { "kind": { "const": "repository_ref" }, "normalized_key": { "type": "string", "minLength": 1 }, "value": { "$ref": "#/$defs/RepositoryRefResource" } } },
+        { "type": "object", "additionalProperties": false, "required": ["kind", "normalized_key", "value"], "properties": { "kind": { "const": "artifact" }, "normalized_key": { "type": "string", "minLength": 1 }, "value": { "$ref": "#/$defs/ArtifactResource" } } }
+      ]
+    }
+  }
+}

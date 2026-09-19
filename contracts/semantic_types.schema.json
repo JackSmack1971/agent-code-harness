@@ -78,12 +78,12 @@
 
     "Effect": {
       "type": "string",
-      "$comment": "Owned by PolicyContract v1 (Blueprint 9.12.1, Phase 2 deliverable), not yet materialized under contracts/. This is a string carrier only so WorkPackage/ChangeContract can reference the type now without SemanticTypes v1 pre-empting or duplicating PolicyContract v1's closed 11-value enum (READ, WORKSPACE_WRITE, PROCESS_EXEC, SHELL_INTERPRETATION, NETWORK, DATA_EGRESS, EXTERNAL_READ, EXTERNAL_WRITE, SECRET_ACCESS, DESTRUCTIVE, PRIVILEGED). Do not re-enumerate that list here; consumers validate against PolicyContract v1 once it exists.",
+      "$comment": "Owned by PolicyContract v1 (Blueprint 9.12.1, policy_contract.schema.json#/$defs/Effect), materialized as of Phase 0E. This remains a plain string carrier here (rather than an inline enum) so WorkPackage/ChangeContract can reference the type without SemanticTypes v1 duplicating PolicyContract v1's closed 11-value enum. Do not re-enumerate that list here; consumers validate against PolicyContract v1.",
       "minLength": 1
     },
     "ResourcePattern": {
       "type": "object",
-      "$comment": "Owned by ResourceNormalization v1 (Blueprint 10.10, not yet materialized under contracts/). This is a structural carrier only (kind/match/value) so WorkPackage can reference the type now without SemanticTypes v1 pre-empting ResourceNormalization v1's kind-specific grammar. Do not add kind-specific value shapes here.",
+      "$comment": "Owned by ResourceNormalization v1 (Blueprint 10.10, resource_normalization.schema.json#/$defs/ResourcePattern), materialized as of Phase 0E. This remains a structural carrier only (kind/match/value) so WorkPackage can reference the type without duplicating ResourceNormalization v1's kind-specific grammar. Do not add kind-specific value shapes here.",
       "additionalProperties": false,
       "required": ["kind", "match", "value"],
       "properties": {

@@ -54,13 +54,13 @@
 
     "NormalizedResource": {
       "type": "object",
-      "$comment": "Owned by ResourceNormalization v1 (Blueprint 10.10, Phase 2 deliverable, not yet materialized under contracts/). Structural carrier only, mirroring the ResourcePattern carrier already documented in semantic_types.schema.json. Do not add kind-specific normalized-value shapes here.",
+      "$comment": "Owned by ResourceNormalization v1 (Blueprint 10.10, resource_normalization.schema.json#/$defs/NormalizedResource), materialized as of Phase 0E. Structural carrier only, mirroring the ResourcePattern carrier already documented in semantic_types.schema.json. Do not add kind-specific normalized-value shapes here; `value` accepts a string in addition to an object because ResourceNormalization v1's repo_path kind is a bare canonical path string, not a nested object, and every literal ResourceNormalization v1#/$defs/NormalizedResource instance MUST validate against this generic carrier too.",
       "additionalProperties": false,
       "required": ["kind", "normalized_key", "value"],
       "properties": {
         "kind": { "type": "string", "minLength": 1 },
         "normalized_key": { "type": "string", "minLength": 1, "description": "Canonical string form used for authorization equality comparisons." },
-        "value": { "type": "object" }
+        "value": { "anyOf": [{ "type": "object" }, { "type": "string" }] }
       }
     },
 

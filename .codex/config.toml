@@ -1,0 +1,64 @@
+# Agentic Coding Harness — Codex project defaults
+# Project-local .codex configuration is loaded only for trusted projects.
+# These are defaults, not administrative requirements; organization/user policy may narrow them.
+
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+allow_login_shell = false
+
+[sandbox_workspace_write]
+network_access = false
+
+[features]
+hooks = true
+multi_agent = true
+
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 4
+interrupt_message = true
+
+[[hooks.SessionStart]]
+matcher = "startup|resume|clear"
+[[hooks.SessionStart.hooks]]
+type = "command"
+command = 'python3 "$(git rev-parse --show-toplevel)/.codex/hooks/session-start.py"'
+command_windows = 'py -3 "$(git rev-parse --show-toplevel)/.codex/hooks/session-start.py"'
+timeout = 10
+statusMessage = "Loading harness repository state"
+additionalContextLimit = 1500
+
+[[hooks.PreToolUse]]
+matcher = "^Bash$"
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = 'python3 "$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-command-policy.py"'
+command_windows = 'py -3 "$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-command-policy.py"'
+timeout = 10
+statusMessage = "Checking command guardrails"
+
+[[hooks.PreToolUse]]
+matcher = "Edit|Write|^apply_patch$"
+[[hooks.PreToolUse.hooks]]
+type = "command"
+command = 'python3 "$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-path-policy.py"'
+command_windows = 'py -3 "$(git rev-parse --show-toplevel)/.codex/hooks/pre-tool-path-policy.py"'
+timeout = 10
+statusMessage = "Checking protected paths"
+
+[[hooks.PostToolUse]]
+matcher = "Edit|Write|^apply_patch$"
+[[hooks.PostToolUse.hooks]]
+type = "command"
+command = 'python3 "$(git rev-parse --show-toplevel)/.codex/hooks/post-tool-record-change.py"'
+command_windows = 'py -3 "$(git rev-parse --show-toplevel)/.codex/hooks/post-tool-record-change.py"'
+timeout = 10
+statusMessage = "Recording changed paths"
+
+[[hooks.Stop]]
+[[hooks.Stop.hooks]]
+type = "command"
+command = 'python3 "$(git rev-parse --show-toplevel)/.codex/hooks/stop-completion-gate.py"'
+command_windows = 'py -3 "$(git rev-parse --show-toplevel)/.codex/hooks/stop-completion-gate.py"'
+timeout = 20
+statusMessage = "Checking completion evidence"

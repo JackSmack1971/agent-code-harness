@@ -1,0 +1,45 @@
+# ResourceNormalization v1 (Unified Implementation Blueprint 9.12.2/9.12.3, 10.10).
+# Owner: repository foundation. Literal transcription; no kind, grammar rule,
+# normalization step, or adversarial vector category here is invented.
+$schema: https://agentic-coding-harness.dev/contracts/resource_normalization.schema.json
+x-contract-name: ResourceNormalization
+x-contract-version: 1
+
+resource_kinds:
+  - repo_path
+  - process
+  - network_origin
+  - external_service
+  - secret
+  - repository_ref
+  - artifact
+
+pattern_grammar:
+  match_kinds: [EXACT, PREFIX, GLOB]
+  prefix_eligible_kinds: [repo_path, artifact, external_service]
+  glob_tokens: ["*", "?", "**"]
+
+repo_path_normalization_steps:
+  - "input must be relative to the governed worktree unless the tool contract explicitly permits another root"
+  - "reject NUL and invalid platform path encodings"
+  - "collapse '.' components"
+  - "reject any '..' that escapes the authorized root"
+  - "resolve existing symlinks before authorization"
+  - "for creation targets, resolve the nearest existing ancestor and prove the unresolved suffix cannot escape through a symlink race under the tool's atomicity strategy"
+  - "compare using platform-appropriate canonical case semantics"
+  - "authorize the final resolved target, not only the lexical input"
+
+adversarial_vectors:
+  - path_traversal
+  - symlink_junction_escape
+  - case_fold_collision
+  - windows_drive_unc_form
+  - idna_hostname
+  - trailing_dot_hostname
+  - default_port_materialization
+  - ipv4_ipv6_literal
+  - redirect_as_new_resource
+  - process_interpreter_script_ambiguity
+  - path_shadowing
+  - environment_injection
+  - resource_pattern_broadening

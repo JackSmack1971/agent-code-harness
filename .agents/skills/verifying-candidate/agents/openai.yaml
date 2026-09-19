@@ -1,0 +1,6 @@
+interface:
+  display_name: "Verifying Candidate"
+  short_description: "Independently run the verification ladder against the exact current candidate and classify mandatory criteria."
+  default_prompt: "Use $verifying-candidate for this task."
+policy:
+  allow_implicit_invocation: false

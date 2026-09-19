@@ -1,0 +1,385 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-coding-harness.dev/contracts/configuration_schema.schema.json",
+  "x-contract-name": "ConfigurationSchema",
+  "x-contract-version": 1,
+  "$comment": "Blueprint 9.9 (Contract 6), 10.6 (Configuration Closure). Sole authoritative source for the canonical top-level configuration tree, migration aliases, ordinary precedence order, canonical file locations, the registered environment-override list, the required fail-safe defaults, the secret-reference source registry, and the strict schema every effective (post-parse, post-alias-migration) configuration object MUST satisfy. Only src/agentic_harness/_config.py may resolve/merge configuration, and it does so by consulting this document rather than a second hand-maintained copy (Canonical Identity Rules).",
+  "title": "ConfigurationSchema v1",
+  "description": "Registry of ConfigurationSchema v1 metadata (top-level tree, aliases, precedence, file locations, environment overrides, fail-safe defaults, secret sources) plus the EffectiveConfiguration $def every resolved configuration object is validated against.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "x-contract-name", "x-contract-version",
+    "canonical_top_level_keys", "aliases", "precedence_order",
+    "file_locations", "env_overrides", "required_defaults", "secret_sources"
+  ],
+  "properties": {
+    "$schema": { "const": "https://agentic-coding-harness.dev/contracts/configuration_schema.schema.json" },
+    "x-contract-name": { "const": "ConfigurationSchema" },
+    "x-contract-version": { "type": "integer", "minimum": 1 },
+
+    "canonical_top_level_keys": {
+      "type": "array",
+      "description": "9.9.2. Only these top-level keys are accepted in schema v1, exact Blueprint order.",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" }
+    },
+
+    "aliases": {
+      "type": "object",
+      "description": "9.9.2 / 10.6. Read-only migration aliases: alias key -> canonical key. Alias and canonical key appearing together in one merged source is CONFIG_ALIAS_CONFLICT.",
+      "additionalProperties": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_]*$" }
+    },
+
+    "precedence_order": {
+      "type": "array",
+      "description": "9.9.1. Ordinary value precedence, lowest to highest. Security authority is NOT ordinary precedence (9.9.1/9.12.4): effective security scope is the intersection of all applicable constraints regardless of this list's order.",
+      "minItems": 1,
+      "items": { "type": "string", "enum": ["built_in_defaults", "system_config", "user_config", "repository_config", "explicit_config_file", "environment_overrides", "cli_overrides"] },
+      "const": ["built_in_defaults", "system_config", "user_config", "repository_config", "explicit_config_file", "environment_overrides", "cli_overrides"]
+    },
+
+    "file_locations": {
+      "type": "object",
+      "description": "10.6.1. Canonical system/user/repository config file locations by platform. A missing implicit file contributes no values and is not an error; a missing explicit --config path is CONFIG_INVALID.",
+      "additionalProperties": false,
+      "required": ["linux", "macos", "windows", "repository", "explicit"],
+      "properties": {
+        "linux": {
+          "type": "object", "additionalProperties": false, "required": ["system", "user_primary", "user_fallback"],
+          "properties": {
+            "system": { "const": "/etc/agentic-harness/config.toml" },
+            "user_primary": { "const": "$XDG_CONFIG_HOME/agentic-harness/config.toml" },
+            "user_fallback": { "const": "~/.config/agentic-harness/config.toml" }
+          }
+        },
+        "macos": {
+          "type": "object", "additionalProperties": false, "required": ["system", "user"],
+          "properties": {
+            "system": { "const": "/Library/Application Support/Agentic Harness/config.toml" },
+            "user": { "const": "~/Library/Application Support/Agentic Harness/config.toml" }
+          }
+        },
+        "windows": {
+          "type": "object", "additionalProperties": false, "required": ["system", "user"],
+          "properties": {
+            "system": { "const": "%PROGRAMDATA%\\AgenticHarness\\config.toml" },
+            "user": { "const": "%APPDATA%\\AgenticHarness\\config.toml" }
+          }
+        },
+        "repository": { "const": "<repo-root>/.harness/config.toml" },
+        "explicit": { "const": "--config <path>" }
+      }
+    },
+
+    "env_overrides": {
+      "type": "array",
+      "description": "10.6.2. The exact registered environment-variable override set. Environment variables are disabled by default except this registry; an unregistered HARNESS_* variable is not silently admitted.",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/EnvOverride" }
+    },
+
+    "required_defaults": {
+      "description": "9.9.3. Required fail-safe defaults, literal transcription. src/agentic_harness/_config.py injects these before validating/merging any source.",
+      "$ref": "#/$defs/EffectiveConfiguration"
+    },
+
+    "secret_sources": {
+      "type": "array",
+      "description": "9.9.4. Supported secret-reference sources are versioned capabilities; an unknown source fails validation.",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "enum": ["env"] }
+    }
+  },
+
+  "$defs": {
+    "EnvOverride": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["variable", "target_path", "kind"],
+      "properties": {
+        "variable": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+        "target_path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Dot-delimited path into the canonical top-level tree, or 'CONFIG_FILE' for HARNESS_CONFIG (explicit-config-path equivalent, not a config value)."
+        },
+        "kind": { "type": "string", "enum": ["CONFIG_FILE_PATH", "SCALAR_OVERRIDE", "SECRET_REFERENCE"] }
+      }
+    },
+
+    "SecretRef": {
+      "type": "object",
+      "description": "9.9.4. Secret values MUST be references, never plaintext, in canonical configuration.",
+      "additionalProperties": false,
+      "required": ["source", "name"],
+      "properties": {
+        "source": { "type": "string", "enum": ["env"] },
+        "name": { "type": "string", "minLength": 1 }
+      }
+    },
+
+    "ProviderDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["adapter"],
+      "properties": {
+        "adapter": { "type": "string", "enum": ["openai", "anthropic", "openrouter"] },
+        "base_url": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "default": null },
+        "api_key": { "anyOf": [{ "$ref": "#/$defs/SecretRef" }, { "type": "null" }], "default": null },
+        "account_scope": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "default": null }
+      }
+    },
+
+    "RouteSpec": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["provider", "model"],
+          "properties": {
+            "provider": { "type": "string", "minLength": 1 },
+            "model": { "type": "string", "minLength": 1 }
+          }
+        },
+        { "type": "null" }
+      ]
+    },
+
+    "CommandSpec": {
+      "type": "object",
+      "description": "10.6.3 repository_commands: explicit named deterministic command specs. argv only; no shell interpolation (9.14.6: SHELL_INTERPRETATION is a distinct, separately-authorized effect).",
+      "additionalProperties": false,
+      "required": ["argv"],
+      "properties": {
+        "argv": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "cwd": { "type": "string", "default": "." },
+        "timeout_seconds": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }], "default": null }
+      }
+    },
+
+    "DataEgressDestinationRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["resource_pattern", "maximum_classification"],
+      "properties": {
+        "resource_pattern": { "type": "string", "minLength": 1 },
+        "maximum_classification": { "type": "string", "enum": ["PUBLIC", "INTERNAL", "SENSITIVE", "SECRET"] }
+      }
+    },
+
+    "EffectiveConfiguration": {
+      "type": "object",
+      "description": "9.9.2/10.6.3. The strict shape of a fully-resolved (parsed, alias-migrated, merged, defaulted) configuration object. additionalProperties:false at every level; no top-level section is an unconstrained dict[str, Any] except the declared extensions payload (10.6.3).",
+      "additionalProperties": false,
+      "required": [
+        "runtime", "workspace", "sandbox", "policy", "providers", "routes", "context",
+        "retrieval", "verification", "repository_commands", "network", "data_egress",
+        "secrets", "parsers", "memory", "skills", "events", "telemetry", "retention",
+        "approvals", "acceptance", "mcp", "doctor", "extensions"
+      ],
+      "properties": {
+        "runtime": {
+          "type": "object", "additionalProperties": false,
+          "required": ["headless", "execution_tier", "max_subagent_depth", "machine_output", "log_level", "max_run_seconds"],
+          "properties": {
+            "headless": { "type": "boolean", "default": false },
+            "execution_tier": { "type": "string", "enum": ["auto", "tier1", "tier2"], "default": "auto" },
+            "max_subagent_depth": { "type": "integer", "const": 1, "default": 1, "description": "architecture-boundaries.md: recursive subagents are prohibited in v1; controlled delegation depth is exactly one." },
+            "machine_output": { "type": "boolean", "default": false },
+            "log_level": { "type": "string", "enum": ["DEBUG", "INFO", "WARNING", "ERROR"], "default": "INFO" },
+            "max_run_seconds": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }], "default": null }
+          }
+        },
+        "workspace": {
+          "type": "object", "additionalProperties": false,
+          "required": ["root", "preserve_on_failure", "mutation_mode", "preserve_original_checkout"],
+          "properties": {
+            "root": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "default": null },
+            "preserve_on_failure": { "type": "boolean", "default": true },
+            "mutation_mode": { "type": "string", "const": "isolated_worktree", "default": "isolated_worktree" },
+            "preserve_original_checkout": { "type": "boolean", "const": true, "default": true }
+          }
+        },
+        "sandbox": {
+          "type": "object", "additionalProperties": false,
+          "required": ["backend", "require_non_root", "host_fallback", "require_isolation", "cpu_limit", "memory_limit_mb", "pids_limit"],
+          "properties": {
+            "backend": { "type": "string", "enum": ["auto", "docker", "podman", "host"], "default": "auto" },
+            "require_non_root": { "type": "boolean", "const": true, "default": true },
+            "host_fallback": { "type": "string", "const": "explicit_only", "default": "explicit_only" },
+            "require_isolation": { "type": "boolean", "default": true },
+            "cpu_limit": { "anyOf": [{ "type": "number", "exclusiveMinimum": 0 }, { "type": "null" }], "default": null },
+            "memory_limit_mb": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }], "default": null },
+            "pids_limit": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }], "default": null }
+          }
+        },
+        "policy": {
+          "type": "object", "additionalProperties": false,
+          "required": ["policy_files", "default_decision", "unknown_effect", "unknown_resource_type", "repository_text_can_expand_authority"],
+          "properties": {
+            "policy_files": { "type": "array", "items": { "type": "string", "minLength": 1 }, "default": [] },
+            "default_decision": { "type": "string", "enum": ["DENY", "APPROVAL_REQUIRED"], "default": "DENY" },
+            "unknown_effect": { "type": "string", "const": "deny", "default": "deny", "description": "9.9.3/9.12.1: unknown effects deny. Fixed, never operator-overridable (security authority is not ordinary precedence)." },
+            "unknown_resource_type": { "type": "string", "const": "deny", "default": "deny" },
+            "repository_text_can_expand_authority": { "type": "boolean", "const": false, "default": false, "description": "3.7/9.12.5/INV-SECURITY-002: repository/model/tool text cannot widen authority." }
+          }
+        },
+        "providers": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/ProviderDefinition" },
+          "default": {}
+        },
+        "routes": {
+          "type": "object", "additionalProperties": false,
+          "required": ["primary", "low_cost_candidates", "stronger_candidates", "reviewer"],
+          "properties": {
+            "primary": { "$ref": "#/$defs/RouteSpec", "default": null },
+            "low_cost_candidates": { "type": "array", "items": { "$ref": "#/$defs/RouteSpec" }, "default": [] },
+            "stronger_candidates": { "type": "array", "items": { "$ref": "#/$defs/RouteSpec" }, "default": [] },
+            "reviewer": { "$ref": "#/$defs/RouteSpec", "default": null }
+          }
+        },
+        "context": {
+          "type": "object", "additionalProperties": false,
+          "required": ["max_input_tokens", "max_artifact_inline_bytes"],
+          "properties": {
+            "max_input_tokens": { "type": "integer", "minimum": 1, "default": 100000 },
+            "max_artifact_inline_bytes": { "type": "integer", "minimum": 1, "maximum": 1048576, "default": 1048576, "description": "10.3.9: inline payload MUST NOT exceed the contract maximum of 1 MiB." }
+          }
+        },
+        "retrieval": {
+          "type": "object", "additionalProperties": false,
+          "required": ["lexical", "structural", "trajectory", "semantic"],
+          "properties": {
+            "lexical": { "type": "boolean", "default": true },
+            "structural": { "type": "boolean", "default": true },
+            "trajectory": { "type": "boolean", "default": true },
+            "semantic": { "type": "boolean", "default": false, "description": "3.6: optional semantic/vector retrieval, cannot be the sole retrieval mechanism." }
+          }
+        },
+        "verification": {
+          "type": "object", "additionalProperties": false,
+          "required": ["focused_required", "broad_required", "structural_required", "intent_review_required", "unrunnable_required_check", "stale_candidate_evidence"],
+          "properties": {
+            "focused_required": { "type": "boolean", "default": true },
+            "broad_required": { "type": "boolean", "default": true },
+            "structural_required": { "type": "boolean", "default": true },
+            "intent_review_required": { "type": "boolean", "default": true },
+            "unrunnable_required_check": { "type": "string", "const": "inconclusive", "default": "inconclusive", "description": "9.9.3/INV-VERIFY-001: an unrunnable required check is never converted to PASS." },
+            "stale_candidate_evidence": { "type": "string", "const": "invalidate", "default": "invalidate", "description": "9.9.3/INV-VERIFY-002." }
+          }
+        },
+        "repository_commands": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/CommandSpec" },
+          "default": {}
+        },
+        "network": {
+          "type": "object", "additionalProperties": false,
+          "required": ["default", "allowed_origins", "scoped_request_on_unenforceable_backend"],
+          "properties": {
+            "default": { "type": "string", "enum": ["deny", "allow"], "default": "deny" },
+            "allowed_origins": { "type": "array", "items": { "type": "string", "minLength": 1 }, "default": [] },
+            "scoped_request_on_unenforceable_backend": { "type": "string", "const": "block", "default": "block", "description": "9.9.3/SANDBOX_UNENFORCEABLE_SCOPE: unavailable enforcement blocks, never silently widens." }
+          }
+        },
+        "data_egress": {
+          "type": "object", "additionalProperties": false,
+          "required": ["default", "maximum_classification", "destinations"],
+          "properties": {
+            "default": { "type": "string", "const": "deny", "default": "deny" },
+            "maximum_classification": { "type": "string", "enum": ["PUBLIC", "INTERNAL", "SENSITIVE", "SECRET"], "default": "PUBLIC" },
+            "destinations": { "type": "array", "items": { "$ref": "#/$defs/DataEgressDestinationRule" }, "default": [] }
+          }
+        },
+        "secrets": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/SecretRef" },
+          "default": {}
+        },
+        "parsers": {
+          "type": "object", "additionalProperties": false,
+          "required": ["enabled"],
+          "properties": {
+            "enabled": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true, "default": [] }
+          }
+        },
+        "memory": {
+          "type": "object", "additionalProperties": false,
+          "required": ["enabled"],
+          "properties": { "enabled": { "type": "boolean", "const": false, "default": false, "description": "9.9.3/phase-registry.md Phase 10: not enabled before its owning phase closes." } }
+        },
+        "skills": {
+          "type": "object", "additionalProperties": false,
+          "required": ["enabled"],
+          "properties": { "enabled": { "type": "boolean", "const": false, "default": false } }
+        },
+        "events": {
+          "type": "object", "additionalProperties": false,
+          "required": ["jsonl_projection", "projection_path"],
+          "properties": {
+            "jsonl_projection": { "type": "boolean", "default": true },
+            "projection_path": { "anyOf": [{ "type": "string", "minLength": 1 }, { "type": "null" }], "default": null }
+          }
+        },
+        "telemetry": {
+          "type": "object", "additionalProperties": false,
+          "required": ["enabled", "exporter"],
+          "properties": {
+            "enabled": { "type": "boolean", "default": false },
+            "exporter": { "type": "string", "const": "none", "default": "none" }
+          }
+        },
+        "retention": {
+          "type": "object", "additionalProperties": false,
+          "required": ["event_days", "artifact_days", "failed_run_days"],
+          "properties": {
+            "event_days": { "type": "integer", "minimum": 0, "default": 90 },
+            "artifact_days": { "type": "integer", "minimum": 0, "default": 90 },
+            "failed_run_days": { "type": "integer", "minimum": 0, "default": 30 }
+          }
+        },
+        "approvals": {
+          "type": "object", "additionalProperties": false,
+          "required": ["headless_behavior", "default_scope", "mode", "grant_ttl_seconds"],
+          "properties": {
+            "headless_behavior": { "type": "string", "const": "fail", "default": "fail", "description": "9.9.3: headless run with a required approval fails closed rather than blocking indefinitely or auto-granting." },
+            "default_scope": { "type": "string", "enum": ["once", "run"], "default": "once" },
+            "mode": { "type": "string", "enum": ["interactive", "headless"], "default": "interactive" },
+            "grant_ttl_seconds": { "anyOf": [{ "type": "integer", "minimum": 1 }, { "type": "null" }], "default": null }
+          }
+        },
+        "acceptance": {
+          "type": "object", "additionalProperties": false,
+          "required": ["strategy", "require_destination_reconciliation", "require_post_integration_verification"],
+          "properties": {
+            "strategy": { "type": "string", "enum": ["squash", "merge"], "default": "squash", "description": "9.13.6: rebase is excluded; automatic rebasing of a verified candidate is prohibited." },
+            "require_destination_reconciliation": { "type": "boolean", "const": true, "default": true },
+            "require_post_integration_verification": { "type": "boolean", "const": true, "default": true }
+          }
+        },
+        "mcp": {
+          "type": "object", "additionalProperties": false,
+          "required": ["enabled"],
+          "properties": { "enabled": { "type": "boolean", "const": false, "default": false } }
+        },
+        "doctor": {
+          "type": "object", "additionalProperties": false,
+          "required": ["strict"],
+          "properties": { "strict": { "type": "boolean", "default": false } }
+        },
+        "extensions": {
+          "type": "object",
+          "description": "10.6.3/9.9.2: the only general extension point. Each key MUST be namespaced by a reverse-DNS or package-qualified identifier.",
+          "additionalProperties": { "type": "object" },
+          "propertyNames": { "pattern": "^[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)+$" },
+          "default": {}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Implementing Slice"
+  short_description: "Execute one authorized coherent implementation slice with tests in an isolated worktree."
+  default_prompt: "Use $implementing-slice for this task."
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Closing Phase"
+  short_description: "Run the final read-only phase closure gate after implementation, verification, invariant audit, and intent review are complete."
+  default_prompt: "Use $closing-phase for this task."
+policy:
+  allow_implicit_invocation: false

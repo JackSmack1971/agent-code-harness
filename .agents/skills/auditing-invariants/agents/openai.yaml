@@ -1,0 +1,6 @@
+interface:
+  display_name: "Auditing Invariants"
+  short_description: "Audit canonical contracts, security authority, and cross-subsystem invariants before phase closure."
+  default_prompt: "Use $auditing-invariants for this task."
+policy:
+  allow_implicit_invocation: false

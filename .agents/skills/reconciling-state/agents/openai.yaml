@@ -1,0 +1,6 @@
+interface:
+  display_name: "Reconciling State"
+  short_description: "Diagnose resume, worktree, repository, configuration, policy, candidate, destination, or lock drift without silently continuing mutation."
+  default_prompt: "Use $reconciling-state for this task."
+policy:
+  allow_implicit_invocation: false

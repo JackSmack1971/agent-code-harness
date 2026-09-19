@@ -1,0 +1,84 @@
+# PolicyContract v1 (Unified Implementation Blueprint 3.7, 9.12, 10.11).
+# Owner: repository foundation. Literal transcription for every effect,
+# trust class, algebra rule, and approval-binding rule; no rule of those
+# kinds is invented. Two exceptions the Blueprint leaves unspecified and
+# this contract resolves explicitly (Phase 0C/0D precedent for recording a
+# judgment call rather than leaving it implicit): `redaction.marker_format`
+# (10.11 requires "a typed redaction marker" but names no literal string)
+# and `redaction.credential_formats` (10.11 source 3, "registered
+# credential formats required by enabled adapters", names no concrete
+# registry). Both are pinned here as the single source src/agentic_harness/
+# _classification.py consults, rather than left for runtime code to invent
+# independently or duplicate.
+$schema: https://agentic-coding-harness.dev/contracts/policy_contract.schema.json
+x-contract-name: PolicyContract
+x-contract-version: 1
+
+effects:
+  - READ
+  - WORKSPACE_WRITE
+  - PROCESS_EXEC
+  - SHELL_INTERPRETATION
+  - NETWORK
+  - DATA_EGRESS
+  - EXTERNAL_READ
+  - EXTERNAL_WRITE
+  - SECRET_ACCESS
+  - DESTRUCTIVE
+  - PRIVILEGED
+
+trust_classes:
+  - SYSTEM_TRUSTED
+  - USER_TRUSTED
+  - PROJECT_POLICY
+  - REPOSITORY_UNTRUSTED
+  - TOOL_OUTPUT_UNTRUSTED
+  - EXTERNAL_UNTRUSTED
+  - MODEL_GENERATED
+
+decision_algebra:
+  dimensions:
+    - requested_effects
+    - normalized_resources
+    - provenance_trust
+    - data_classification_taint
+    - reversibility
+    - sandbox_enforceability
+    - applicable_approvals
+    - higher_authority_denies
+  results: [ALLOW, APPROVAL_REQUIRED, DENY, BLOCKED_CAPABILITY]
+  rules:
+    - "explicit deny wins"
+    - "narrower scope wins over broader scope"
+    - "unavailable enforcement yields BLOCKED_CAPABILITY, never an implicit widening"
+    - "an approval can satisfy only an approval requirement already permitted by policy; it cannot override a hard deny"
+    - "derived data inherits the maximum governing sensitivity/taint of its inputs until an explicit declassification mechanism exists; v1 defines no automatic declassification by summarization"
+  untrusted_trust_classes: [REPOSITORY_UNTRUSTED, TOOL_OUTPUT_UNTRUSTED, EXTERNAL_UNTRUSTED, MODEL_GENERATED]
+
+approval_binding:
+  binding_fields: [effect_set, normalized_resources, argument_digest, credential_exposure, reversibility, run_id, tool_call_identity, tool_schema_digest]
+  allow_once_semantics: >-
+    ALLOW_ONCE is consumed atomically immediately before the authorized side
+    effect begins. A tool failure after consumption does not restore the
+    grant.
+  allow_run_semantics: >-
+    ALLOW_RUN remains usable until expiry/revocation but only for requests
+    matching its explicit scope predicate.
+  rebinding_rule: >-
+    any material difference in a binding field requires a new
+    ApprovalRequest; no implicit reuse across a widened or altered request
+
+redaction:
+  sources: [SCHEMA_SENSITIVE_FIELD, SECRET_BROKER_EXACT_MATCH, REGISTERED_CREDENTIAL_FORMAT]
+  credential_formats:
+    - label: OPENAI_API_KEY
+      pattern: '\bsk-[A-Za-z0-9_-]{20,}\b'
+    - label: ANTHROPIC_API_KEY
+      pattern: '\bsk-ant-[A-Za-z0-9_-]{20,}\b'
+  entropy_only_is_advisory_only: true
+  derived_representation_rule: >-
+    the broker may register deterministic derived representations of an
+    exact secret (e.g. base64) only when the transformation is explicitly
+    supported; unbounded transformation guessing is prohibited
+  redaction_points: [EVENT_PERSISTENCE, TOOL_OUTPUT_PERSISTENCE, MODEL_CONTEXT_ADMISSION, TELEMETRY_EXPORT, CLI_RENDERING]
+  marker_format: "<REDACTED:{secret_id}>"

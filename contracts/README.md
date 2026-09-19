@@ -139,15 +139,101 @@ Phase 0D scope (current addition — deterministic state authority):
   transition, every exceptional transition, and every recovery relation
   (including all three `INTEGRATION_CONFLICT` dispositions).
 
+Phase 0E scope (current addition — configuration, policy, resource
+normalization, and classification/redaction foundation):
+
+- `configuration_schema.schema.json` / `.yaml` — `ConfigurationSchema v1`
+  (Blueprint 9.9, 10.6): the canonical top-level configuration tree (24
+  keys), the `run`->`runtime` / `routing`->`routes` read-only migration
+  aliases (alias+canonical together is `CONFIG_ALIAS_CONFLICT`), ordinary
+  precedence order (`built-in defaults < system < user < repository <
+  explicit --config < environment overrides < CLI overrides`, which is
+  explicitly *not* security authority), the canonical per-platform config
+  file locations, the registered `HARNESS_*` environment-override list
+  (unregistered variables are never consulted), the 9.9.3 fail-safe
+  defaults extended to a complete `EffectiveConfiguration` instance per
+  10.6.3's "every top-level section has an explicit strict schema" closure
+  rule, and the v1 secret-source registry (`env` only; secret values are
+  always `{"source", "name"}` references, never plaintext, in canonical
+  configuration). TOML is the sole operator-authored format, parsed with
+  the standard-library `tomllib` (read-only, matching the fact this is a
+  human-authored file the runtime never writes back out).
+  `src/agentic_harness/_config.py` is the runtime implementation: it
+  resolves the canonical platform/repository locations (including the
+  registered `HARNESS_CONFIG` explicit path), parses TOML, alias-migrates
+  and strictly validates each present source document,
+  merges them in ordinary precedence while applying
+  `apply_security_monotonicity` to every supplied security-bearing layer
+  (10.6.1: security authority is an intersection, so a later layer may
+  narrow but MUST NOT widen an earlier security constraint). This covers
+  the security-relevant `sandbox`/`network`/`data_egress`/`acceptance`/`policy`
+  fields via a bool-stricter-wins, deny-wins, allow-list-intersection, or
+  classification-ceiling rule per field, never ordinary last-write-wins.
+  applies only the registered environment overrides, then validates the
+  merged result against `EffectiveConfiguration` before computing
+  `ConfigDigest` through the single canonical serialization implementation.
+- `policy_contract.schema.json` / `.yaml` — `PolicyContract v1` (Blueprint
+  3.7, 9.12, 10.11): the closed 11-value `Effect` set and 7-value
+  `TrustClass` set (both now authoritative here, no longer placeholders),
+  the decision algebra's eight dimensions and four results
+  (`ALLOW`/`APPROVAL_REQUIRED`/`DENY`/`BLOCKED_CAPABILITY`) with its five
+  literal combination rules (explicit deny wins; narrower scope wins;
+  unavailable enforcement yields `BLOCKED_CAPABILITY`, never a widening; an
+  approval can satisfy only an already-permitted requirement; derived data
+  inherits max sensitivity/taint with no v1 automatic declassification),
+  9.12.6 approval-binding field list and `ALLOW_ONCE`/`ALLOW_RUN`
+  semantics, and the 10.11 redaction-source registry (schema
+  `x-sensitive` fields, secret-broker exact match, registered credential
+  formats; entropy-only detection is advisory only) plus its five
+  redaction points. `src/agentic_harness/_policy.py` implements the
+  decision algebra as a pure function (`evaluate`) and the
+  `requires_new_approval` re-binding check (INV-APPROVAL-002).
+- `resource_normalization.schema.json` / `.yaml` — `ResourceNormalization
+  v1` (Blueprint 9.12.2/9.12.3, 10.10): the seven normalized resource kinds
+  and their per-kind canonical structures (now authoritative; supersedes
+  the generic carriers in `semantic_types.schema.json` and
+  `domain_schemas.schema.json`, which remain in place as structural
+  pass-throughs rather than being restructured), the `ResourcePattern`
+  grammar (`EXACT`/`PREFIX`/`GLOB`, `PREFIX` restricted to hierarchical
+  kinds, glob never delegated to a shell), the literal eight-step
+  `repo_path` normalization procedure, and the required adversarial-vector
+  coverage list. `src/agentic_harness/_resource_normalization.py`
+  implements that step sequence (symlink-safe resolution, traversal
+  rejection, Windows drive/UNC rejection, creation-target ancestor
+  anchoring) plus per-kind normalizers for `process` (explicit
+  `path_dirs`-only resolution — no implicit ambient PATH/cwd search, which
+  is how PATH-shadowing attacks work; interpreter invocations require an
+  explicitly normalized script argument), `network_origin` (IDNA encoding,
+  trailing-dot collapsing, default-port materialization, IPv4/IPv6-literal
+  vs. hostname distinction), `repository_ref` (rejects a leading `-` to
+  prevent Git CLI option injection), and `ResourcePattern` matching
+  including a `pattern_is_broader_than` scope-widening check.
+- Data classification/taint propagation and redaction: `DataClassification`
+  and `Taint` shapes were already materialized in
+  `semantic_types.schema.json` (Phase 0C); this phase adds the
+  *propagation/redaction logic* those shapes don't carry on their own,
+  `src/agentic_harness/_classification.py`
+  (`max_classification`/`union_taint`/`derive_provenance` for 10.3.8;
+  `redact_text`/`redact_value`/`redact_output`/`redact_registered_credential_formats`
+  for 10.11, backed by `policy_contract.yaml#/redaction`). `redact_output`
+  is the boundary helper that applies all registered sources together before
+  persistence or egress. There is
+  deliberately no "declassify" function anywhere in this module
+  (`tests/test_classification_redaction.py::test_no_declassify_function_is_exported`
+  asserts this): v1 defines no automatic secret declassification.
+- `tests/configuration_schema/`, `tests/resource_normalization/`,
+  `tests/policy_contract/` — golden/adversarial fixtures, same
+  `{"def": ..., "value": ...}` convention as `tests/domain_schemas/`.
+
 Everything else named in the Phase-0 Contract Closure Gate (`EventRegistry
-v1`, `ResourceNormalization v1`, `SideEffectTransactionProtocol v1`,
-`CLIProtocol v1`, `PolicyContract v1`, `PersistenceSchema v1`,
-`ToolProtocol v1`, `VerificationProtocol v1`, etc.) is out of scope for this
-slice and MUST NOT be assumed to exist yet; see
-`.claude/references/phase-registry.md`. `domain_schemas.schema.json` and
-`cross_contract_invariant_registry.yaml` reference those not-yet-materialized
-contracts only as documented structural carriers (`Effect`, `ResourcePattern`,
-`NormalizedResource`, integration `strategy`), the same pattern
-`semantic_types.schema.json` already established for `Effect`/`ResourcePattern`.
+v1`, `SideEffectTransactionProtocol v1`, `CLIProtocol v1`,
+`PersistenceSchema v1`, `ToolProtocol v1`, `VerificationProtocol v1`, etc.)
+remains out of scope for this slice and MUST NOT be assumed to exist yet;
+see `.claude/references/phase-registry.md`. Wiring the policy/resource/
+redaction foundation materialized this phase into an actual sandboxed
+tool-execution path (native fs/process/search tools, the container
+backend, live approval persistence) is Phase 2/3 work, not this one: what
+exists here is the deterministic decision algebra and normalization logic
+those later phases will call.
 
 Offline conformance tests live in `../tests/` and run with `uv run pytest`.

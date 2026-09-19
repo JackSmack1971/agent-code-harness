@@ -1,0 +1,15 @@
+[
+  { "def": "NormalizedResource", "value": { "kind": "repo_path", "value": "/etc/passwd" } },
+  { "def": "NormalizedResource", "value": { "kind": "repo_path", "value": "../escape" } },
+  { "def": "NormalizedResource", "value": { "kind": "repo_path", "value": "a/../../b" } },
+  { "def": "NormalizedResource", "value": { "kind": "network_origin", "value": { "scheme": "ftp", "host_ascii": "example.com", "port": 21 } } },
+  { "def": "NormalizedResource", "value": { "kind": "network_origin", "value": { "scheme": "https", "host_ascii": "Example.COM", "port": 443 } } },
+  { "def": "NormalizedResource", "value": { "kind": "network_origin", "value": { "scheme": "https", "host_ascii": "example.com", "port": 70000 } } },
+  { "def": "NormalizedResource", "value": { "kind": "process", "value": { "executable": "/usr/bin/git", "argv": ["git"], "cwd": "/repo", "script": null, "env_keys": ["PATH"], "shell": true } } },
+  { "def": "NormalizedResource", "value": { "kind": "secret", "value": { "secret_id": "x", "broker": "env" } } },
+  { "def": "NormalizedResource", "value": { "kind": "repository_ref", "value": { "repo_identity": "sha256:aaaa", "ref_kind": "UNKNOWN_KIND", "ref_name_or_oid": "feature/x" } } },
+  { "def": "NormalizedResource", "value": { "kind": "artifact", "value": { "namespace": "ns", "media_type": null } } },
+  { "def": "NormalizedResource", "value": { "kind": "bogus_kind", "value": "anything" } },
+  { "def": "ResourcePattern", "value": { "kind": "repo_path", "match": "REGEX", "value": "src/.*" } },
+  { "def": "ResourceKind", "value": "raw_string" }
+]

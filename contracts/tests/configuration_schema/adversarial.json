@@ -1,0 +1,1117 @@
+[
+  {
+    "def": "EffectiveConfiguration",
+    "value": {
+      "runtime": {
+        "headless": false,
+        "execution_tier": "auto",
+        "max_subagent_depth": 1,
+        "machine_output": false,
+        "log_level": "INFO",
+        "max_run_seconds": null
+      },
+      "workspace": {
+        "root": null,
+        "preserve_on_failure": true,
+        "mutation_mode": "isolated_worktree",
+        "preserve_original_checkout": true
+      },
+      "sandbox": {
+        "backend": "auto",
+        "require_non_root": true,
+        "host_fallback": "explicit_only",
+        "require_isolation": true,
+        "cpu_limit": null,
+        "memory_limit_mb": null,
+        "pids_limit": null
+      },
+      "policy": {
+        "policy_files": [],
+        "default_decision": "DENY",
+        "unknown_effect": "deny",
+        "unknown_resource_type": "deny",
+        "repository_text_can_expand_authority": false
+      },
+      "providers": {},
+      "routes": {
+        "primary": null,
+        "low_cost_candidates": [],
+        "stronger_candidates": [],
+        "reviewer": null
+      },
+      "context": {
+        "max_input_tokens": 100000,
+        "max_artifact_inline_bytes": 1048576
+      },
+      "retrieval": {
+        "lexical": true,
+        "structural": true,
+        "trajectory": true,
+        "semantic": false
+      },
+      "verification": {
+        "focused_required": true,
+        "broad_required": true,
+        "structural_required": true,
+        "intent_review_required": true,
+        "unrunnable_required_check": "inconclusive",
+        "stale_candidate_evidence": "invalidate"
+      },
+      "repository_commands": {},
+      "network": {
+        "default": "deny",
+        "allowed_origins": [],
+        "scoped_request_on_unenforceable_backend": "block"
+      },
+      "data_egress": {
+        "default": "deny",
+        "maximum_classification": "PUBLIC",
+        "destinations": []
+      },
+      "secrets": {},
+      "parsers": {
+        "enabled": []
+      },
+      "memory": {
+        "enabled": false
+      },
+      "skills": {
+        "enabled": false
+      },
+      "events": {
+        "jsonl_projection": true,
+        "projection_path": null
+      },
+      "telemetry": {
+        "enabled": false,
+        "exporter": "none"
+      },
+      "retention": {
+        "event_days": 90,
+        "artifact_days": 90,
+        "failed_run_days": 30
+      },
+      "approvals": {
+        "headless_behavior": "fail",
+        "default_scope": "once",
+        "mode": "interactive",
+        "grant_ttl_seconds": null
+      },
+      "acceptance": {
+        "strategy": "squash",
+        "require_destination_reconciliation": true,
+        "require_post_integration_verification": true
+      },
+      "mcp": {
+        "enabled": false
+      },
+      "doctor": {
+        "strict": false
+      },
+      "extensions": {},
+      "bogus_section": {}
+    }
+  },
+  {
+    "def": "EffectiveConfiguration",
+    "value": {
+      "workspace": {
+        "root": null,
+        "preserve_on_failure": true,
+        "mutation_mode": "isolated_worktree",
+        "preserve_original_checkout": true
+      },
+      "sandbox": {
+        "backend": "auto",
+        "require_non_root": true,
+        "host_fallback": "explicit_only",
+        "require_isolation": true,
+        "cpu_limit": null,
+        "memory_limit_mb": null,
+        "pids_limit": null
+      },
+      "policy": {
+        "policy_files": [],
+        "default_decision": "DENY",
+        "unknown_effect": "deny",
+        "unknown_resource_type": "deny",
+        "repository_text_can_expand_authority": false
+      },
+      "providers": {},
+      "routes": {
+        "primary": null,
+        "low_cost_candidates": [],
+        "stronger_candidates": [],
+        "reviewer": null
+      },
+      "context": {
+        "max_input_tokens": 100000,
+        "max_artifact_inline_bytes": 1048576
+      },
+      "retrieval": {
+        "lexical": true,
+        "structural": true,
+        "trajectory": true,
+        "semantic": false
+      },
+      "verification": {
+        "focused_required": true,
+        "broad_required": true,
+        "structural_required": true,
+        "intent_review_required": true,
+        "unrunnable_required_check": "inconclusive",
+        "stale_candidate_evidence": "invalidate"
+      },
+      "repository_commands": {},
+      "network": {
+        "default": "deny",
+        "allowed_origins": [],
+        "scoped_request_on_unenforceable_backend": "block"
+      },
+      "data_egress": {
+        "default": "deny",
+        "maximum_classification": "PUBLIC",
+        "destinations": []
+      },
+      "secrets": {},
+      "parsers": {
+        "enabled": []
+      },
+      "memory": {
+        "enabled": false
+      },
+      "skills": {
+        "enabled": false
+      },
+      "events": {
+        "jsonl_projection": true,
+        "projection_path": null
+      },
+      "telemetry": {
+        "enabled": false,
+        "exporter": "none"
+      },
+      "retention": {
+        "event_days": 90,
+        "artifact_days": 90,
+        "failed_run_days": 30
+      },
+      "approvals": {
+        "headless_behavior": "fail",
+        "default_scope": "once",
+        "mode": "interactive",
+        "grant_ttl_seconds": null
+      },
+      "acceptance": {
+        "strategy": "squash",
+        "require_destination_reconciliation": true,
+        "require_post_integration_verification": true
+      },
+      "mcp": {
+        "enabled": false
+      },
+      "doctor": {
+        "strict": false
+      },
+      "extensions": {},
+      "run": {}
+    }
+  },
+  {
+    "def": "EffectiveConfiguration",
+    "value": {
+      "runtime": {
+        "headless": false,
+        "execution_tier": "auto",
+        "max_subagent_depth": 1,
+        "machine_output": false,
+        "log_level": "INFO",
+        "max_run_seconds": null
+      },
+      "workspace": {
+        "root": null,
+        "preserve_on_failure": true,
+        "mutation_mode": "isolated_worktree",
+        "preserve_original_checkout": true
+      },
+      "sandbox": {
+        "backend": "auto",
+        "require_non_root": true,
+        "host_fallback": "explicit_only",
+        "require_isolation": true,
+        "cpu_limit": null,
+        "memory_limit_mb": null,
+        "pids_limit": null
+      },
+      "policy": {
+        "policy_files": [],
+        "default_decision": "DENY",
+        "unknown_effect": "allow",
+        "unknown_resource_type": "deny",
+        "repository_text_can_expand_authority": false
+      },
+      "providers": {},
+      "routes": {
+        "primary": null,
+        "low_cost_candidates": [],
+        "stronger_candidates": [],
+        "reviewer": null
+      },
+      "context": {
+        "max_input_tokens": 100000,
+        "max_artifact_inline_bytes": 1048576
+      },
+      "retrieval": {
+        "lexical": true,
+        "structural": true,
+        "trajectory": true,
+        "semantic": false
+      },
+      "verification": {
+        "focused_required": true,
+        "broad_required": true,
+        "structural_required": true,
+        "intent_review_required": true,
+        "unrunnable_required_check": "inconclusive",
+        "stale_candidate_evidence": "invalidate"
+      },
+      "repository_commands": {},
+      "network": {
+        "default": "deny",
+        "allowed_origins": [],
+        "scoped_request_on_unenforceable_backend": "block"
+      },
+      "data_egress": {
+        "default": "deny",
+        "maximum_classification": "PUBLIC",
+        "destinations": []
+      },
+      "secrets": {},
+      "parsers": {
+        "enabled": []
+      },
+      "memory": {
+        "enabled": false
+      },
+      "skills": {
+        "enabled": false
+      },
+      "events": {
+        "jsonl_projection": true,
+        "projection_path": null
+      },
+      "telemetry": {
+        "enabled": false,
+        "exporter": "none"
+      },
+      "retention": {
+        "event_days": 90,
+        "artifact_days": 90,
+        "failed_run_days": 30
+      },
+      "approvals": {
+        "headless_behavior": "fail",
+        "default_scope": "once",
+        "mode": "interactive",
+        "grant_ttl_seconds": null
+      },
+      "acceptance": {
+        "strategy": "squash",
+        "require_destination_reconciliation": true,
+        "require_post_integration_verification": true
+      },
+      "mcp": {
+        "enabled": false
+      },
+      "doctor": {
+        "strict": false
+      },
+      "extensions": {}
+    }
+  },
+  {
+    "def": "EffectiveConfiguration",
+    "value": {
+      "runtime": {
+        "headless": false,
+        "execution_tier": "auto",
+        "max_subagent_depth": 1,
+        "machine_output": false,
+        "log_level": "INFO",
+        "max_run_seconds": null
+      },
+      "workspace": {
+        "root": null,
+        "preserve_on_failure": true,
+        "mutation_mode": "isolated_worktree",
+        "preserve_original_checkout": true
+      },
+      "sandbox": {
+        "backend": "auto",
+        "require_non_root": true,
+        "host_fallback": "explicit_only",
+        "require_isolation": true,
+        "cpu_limit": null,
+        "memory_limit_mb": null,
+        "pids_limit": null
+      },
+      "policy": {
+        "policy_files": [],
+        "default_decision": "DENY",
+        "unknown_effect": "deny",
+        "unknown_resource_type": "deny",
+        "repository_text_can_expand_authority": false
+      },
+      "providers": {},
+      "routes": {
+        "primary": null,
+        "low_cost_candidates": [],
+        "stronger_candidates": [],
+        "reviewer": null
+      },
+      "context": {
+        "max_input_tokens": 100000,
+        "max_artifact_inline_bytes": 1048576
+      },
+      "retrieval": {
+        "lexical": true,
+        "structural": true,
+        "trajectory": true,
+        "semantic": false
+      },
+      "verification": {
+        "focused_required": true,
+        "broad_required": true,
+        "structural_required": true,
+        "intent_review_required": true,
+        "unrunnable_required_check": "inconclusive",
+        "stale_candidate_evidence": "invalidate"
+      },
+      "repository_commands": {},
+      "network": {
+        "default": "deny",
+        "allowed_origins": [],
+        "scoped_request_on_unenforceable_backend": "block"
+      },
+      "data_egress": {
+        "default": "deny",
+        "maximum_classification": "PUBLIC",
+        "destinations": []
+      },
+      "secrets": {},
+      "parsers": {
+        "enabled": []
+      },
+      "memory": {
+        "enabled": true
+      },
+      "skills": {
+        "enabled": false
+      },
+      "events": {
+        "jsonl_projection": true,
+        "projection_path": null
+      },
+      "telemetry": {
+        "enabled": false,
+        "exporter": "none"
+      },
+      "retention": {
+        "event_days": 90,
+        "artifact_days": 90,
+        "failed_run_days": 30
+      },
+      "approvals": {
+        "headless_behavior": "fail",
+        "default_scope": "once",
+        "mode": "interactive",
+        "grant_ttl_seconds": null
+      },
+      "acceptance": {
+        "strategy": "squash",
+        "require_destination_reconciliation": true,
+        "require_post_integration_verification": true
+      },
+      "mcp": {
+        "enabled": false
+      },
+      "doctor": {
+        "strict": false
+      },
+      "extensions": {}
+    }
+  },
+  {
+    "def": "EffectiveConfiguration",
+    "value": {
+      "runtime": {
+        "headless": false,
+        "execution_tier": "auto",
+        "max_subagent_depth": 1,
+        "machine_output": false,
+        "log_level": "INFO",
+        "max_run_seconds": null
+      },
+      "workspace": {
+        "root": null,
+        "preserve_on_failure": true,
+        "mutation_mode": "isolated_worktree",
+        "preserve_original_checkout": true
+      },
+      "sandbox": {
+        "backend": "auto",
+        "require_non_root": true,
+        "host_fallback": "explicit_only",
+        "require_isolation": true,
+        "cpu_limit": null,
+        "memory_limit_mb": null,
+        "pids_limit": null
+      },
+      "policy": {
+        "policy_files": [],
+        "default_decision": "DENY",
+        "unknown_effect": "deny",
+        "unknown_resource_type": "deny",
+        "repository_text_can_expand_authority": false
+      },
+      "providers": {},
+      "routes": {
+        "primary": null,
+        "low_cost_candidates": [],
+        "stronger_candidates": [],
+        "reviewer": null
+      },
+      "context": {
+        "max_input_tokens": 100000,
+        "max_artifact_inline_bytes": 1048576
+      },
+      "retrieval": {
+        "lexical": true,
+        "structural": true,
+        "trajectory": true,
+        "semantic": false
+      },
+      "verification": {
+        "focused_required": true,
+        "broad_required": true,
+        "structural_required": true,
+        "intent_review_required": true,
+        "unrunnable_required_check": "inconclusive",
+        "stale_candidate_evidence": "invalidate"
+      },
+      "repository_commands": {},
+      "network": {
+        "default": "deny",
+        "allowed_origins": [],
+        "scoped_request_on_unenforceable_backend": "block"
+      },
+      "data_egress": {
+        "default": "deny",
+        "maximum_classification": "PUBLIC",
+        "destinations": []
+      },
+      "secrets": {
+        "github_token": "ghp_plaintextvalue"
+      },
+      "parsers": {
+        "enabled": []
+      },
+      "memory": {
+        "enabled": false
+      },
+      "skills": {
+        "enabled": false
+      },
+      "events": {
+        "jsonl_projection": true,
+        "projection_path": null
+      },
+      "telemetry": {
+        "enabled": false,
+        "exporter": "none"
+      },
+      "retention": {
+        "event_days": 90,
+        "artifact_days": 90,
+        "failed_run_days": 30
+      },
+      "approvals": {
+        "headless_behavior": "fail",
+        "default_scope": "once",
+        "mode": "interactive",
+        "grant_ttl_seconds": null
+      },
+      "acceptance": {
+        "strategy": "squash",
+        "require_destination_reconciliation": true,
+        "require_post_integration_verification": true
+      },
+      "mcp": {
+        "enabled": false
+      },
+      "doctor": {
+        "strict": false
+      },
+      "extensions": {}
+    }
+  },
+  {
+    "def": "EffectiveConfiguration",
+    "value": {
+      "runtime": {
+        "headless": false,
+        "execution_tier": "auto",
+        "max_subagent_depth": 1,
+        "machine_output": false,
+        "log_level": "INFO",
+        "max_run_seconds": null
+      },
+      "workspace": {
+        "root": null,
+        "preserve_on_failure": true,
+        "mutation_mode": "isolated_worktree",
+        "preserve_original_checkout": true
+      },
+      "sandbox": {
+        "backend": "auto",
+        "require_non_root": true,
+        "host_fallback": "explicit_only",
+        "require_isolation": true,
+        "cpu_limit": null,
+        "memory_limit_mb": null,
+        "pids_limit": null
+      },
+      "policy": {
+        "policy_files": [],
+        "default_decision": "DENY",
+        "unknown_effect": "deny",
+        "unknown_resource_type": "deny",
+        "repository_text_can_expand_authority": false
+      },
+      "providers": {},
+      "routes": {
+        "primary": null,
+        "low_cost_candidates": [],
+        "stronger_candidates": [],
+        "reviewer": null
+      },
+      "context": {
+        "max_input_tokens": 100000,
+        "max_artifact_inline_bytes": 2097152
+      },
+      "retrieval": {
+        "lexical": true,
+        "structural": true,
+        "trajectory": true,
+        "semantic": false
+      },
+      "verification": {
+        "focused_required": true,
+        "broad_required": true,
+        "structural_required": true,
+        "intent_review_required": true,
+        "unrunnable_required_check": "inconclusive",
+        "stale_candidate_evidence": "invalidate"
+      },
+      "repository_commands": {},
+      "network": {
+        "default": "deny",
+        "allowed_origins": [],
+        "scoped_request_on_unenforceable_backend": "block"
+      },
+      "data_egress": {
+        "default": "deny",
+        "maximum_classification": "PUBLIC",
+        "destinations": []
+      },
+      "secrets": {},
+      "parsers": {
+        "enabled": []
+      },
+      "memory": {
+        "enabled": false
+      },
+      "skills": {
+        "enabled": false
+      },
+      "events": {
+        "jsonl_projection": true,
+        "projection_path": null
+      },
+      "telemetry": {
+        "enabled": false,
+        "exporter": "none"
+      },
+      "retention": {
+        "event_days": 90,
+        "artifact_days": 90,
+        "failed_run_days": 30
+      },
+      "approvals": {
+        "headless_behavior": "fail",
+        "default_scope": "once",
+        "mode": "interactive",
+        "grant_ttl_seconds": null
+      },
+      "acceptance": {
+        "strategy": "squash",
+        "require_destination_reconciliation": true,
+        "require_post_integration_verification": true
+      },
+      "mcp": {
+        "enabled": false
+      },
+      "doctor": {
+        "strict": false
+      },
+      "extensions": {}
+    }
+  },
+  {
+    "def": "EffectiveConfiguration",
+    "value": {
+      "runtime": {
+        "headless": false,
+        "execution_tier": "auto",
+        "max_subagent_depth": 1,
+        "machine_output": false,
+        "log_level": "INFO",
+        "max_run_seconds": null
+      },
+      "workspace": {
+        "root": null,
+        "preserve_on_failure": true,
+        "mutation_mode": "isolated_worktree",
+        "preserve_original_checkout": true
+      },
+      "sandbox": {
+        "backend": "auto",
+        "require_non_root": true,
+        "host_fallback": "explicit_only",
+        "require_isolation": true,
+        "cpu_limit": null,
+        "memory_limit_mb": null,
+        "pids_limit": null
+      },
+      "policy": {
+        "policy_files": [],
+        "default_decision": "DENY",
+        "unknown_effect": "deny",
+        "unknown_resource_type": "deny",
+        "repository_text_can_expand_authority": false
+      },
+      "providers": {},
+      "routes": {
+        "primary": null,
+        "low_cost_candidates": [],
+        "stronger_candidates": [],
+        "reviewer": null
+      },
+      "context": {
+        "max_input_tokens": 100000,
+        "max_artifact_inline_bytes": 1048576
+      },
+      "retrieval": {
+        "lexical": true,
+        "structural": true,
+        "trajectory": true,
+        "semantic": false
+      },
+      "verification": {
+        "focused_required": true,
+        "broad_required": true,
+        "structural_required": true,
+        "intent_review_required": true,
+        "unrunnable_required_check": "inconclusive",
+        "stale_candidate_evidence": "invalidate"
+      },
+      "repository_commands": {},
+      "network": {
+        "default": "maybe",
+        "allowed_origins": [],
+        "scoped_request_on_unenforceable_backend": "block"
+      },
+      "data_egress": {
+        "default": "deny",
+        "maximum_classification": "PUBLIC",
+        "destinations": []
+      },
+      "secrets": {},
+      "parsers": {
+        "enabled": []
+      },
+      "memory": {
+        "enabled": false
+      },
+      "skills": {
+        "enabled": false
+      },
+      "events": {
+        "jsonl_projection": true,
+        "projection_path": null
+      },
+      "telemetry": {
+        "enabled": false,
+        "exporter": "none"
+      },
+      "retention": {
+        "event_days": 90,
+        "artifact_days": 90,
+        "failed_run_days": 30
+      },
+      "approvals": {
+        "headless_behavior": "fail",
+        "default_scope": "once",
+        "mode": "interactive",
+        "grant_ttl_seconds": null
+      },
+      "acceptance": {
+        "strategy": "squash",
+        "require_destination_reconciliation": true,
+        "require_post_integration_verification": true
+      },
+      "mcp": {
+        "enabled": false
+      },
+      "doctor": {
+        "strict": false
+      },
+      "extensions": {}
+    }
+  },
+  {
+    "def": "EffectiveConfiguration",
+    "value": {
+      "runtime": {
+        "headless": false,
+        "execution_tier": "auto",
+        "max_subagent_depth": 1,
+        "machine_output": false,
+        "log_level": "INFO",
+        "max_run_seconds": null
+      },
+      "workspace": {
+        "root": null,
+        "preserve_on_failure": true,
+        "mutation_mode": "isolated_worktree",
+        "preserve_original_checkout": true
+      },
+      "sandbox": {
+        "backend": "auto",
+        "require_non_root": true,
+        "host_fallback": "explicit_only",
+        "require_isolation": true,
+        "cpu_limit": null,
+        "memory_limit_mb": null,
+        "pids_limit": null
+      },
+      "policy": {
+        "policy_files": [],
+        "default_decision": "DENY",
+        "unknown_effect": "deny",
+        "unknown_resource_type": "deny",
+        "repository_text_can_expand_authority": false
+      },
+      "providers": {},
+      "routes": {
+        "primary": null,
+        "low_cost_candidates": [],
+        "stronger_candidates": [],
+        "reviewer": null
+      },
+      "context": {
+        "max_input_tokens": 100000,
+        "max_artifact_inline_bytes": 1048576
+      },
+      "retrieval": {
+        "lexical": true,
+        "structural": true,
+        "trajectory": true,
+        "semantic": false
+      },
+      "verification": {
+        "focused_required": true,
+        "broad_required": true,
+        "structural_required": true,
+        "intent_review_required": true,
+        "unrunnable_required_check": "inconclusive",
+        "stale_candidate_evidence": "invalidate"
+      },
+      "repository_commands": {},
+      "network": {
+        "default": "deny",
+        "allowed_origins": [],
+        "scoped_request_on_unenforceable_backend": "block"
+      },
+      "data_egress": {
+        "default": "deny",
+        "maximum_classification": "PUBLIC",
+        "destinations": []
+      },
+      "secrets": {},
+      "parsers": {
+        "enabled": []
+      },
+      "memory": {
+        "enabled": false
+      },
+      "skills": {
+        "enabled": false
+      },
+      "events": {
+        "jsonl_projection": true,
+        "projection_path": null
+      },
+      "telemetry": {
+        "enabled": false,
+        "exporter": "none"
+      },
+      "retention": {
+        "event_days": 90,
+        "artifact_days": 90,
+        "failed_run_days": 30
+      },
+      "approvals": {
+        "headless_behavior": "fail",
+        "default_scope": "once",
+        "mode": "interactive",
+        "grant_ttl_seconds": null
+      },
+      "acceptance": {
+        "strategy": "squash",
+        "require_destination_reconciliation": true,
+        "require_post_integration_verification": true
+      },
+      "mcp": {
+        "enabled": false
+      },
+      "extensions": {}
+    }
+  },
+  {
+    "def": "EffectiveConfiguration",
+    "value": {
+      "runtime": {
+        "headless": false,
+        "execution_tier": "auto",
+        "max_subagent_depth": 1,
+        "machine_output": false,
+        "log_level": "INFO",
+        "max_run_seconds": null
+      },
+      "workspace": {
+        "root": null,
+        "preserve_on_failure": true,
+        "mutation_mode": "isolated_worktree",
+        "preserve_original_checkout": true
+      },
+      "sandbox": {
+        "backend": "auto",
+        "require_non_root": true,
+        "host_fallback": "explicit_only",
+        "require_isolation": true,
+        "cpu_limit": null,
+        "memory_limit_mb": null,
+        "pids_limit": null
+      },
+      "policy": {
+        "policy_files": [],
+        "default_decision": "DENY",
+        "unknown_effect": "deny",
+        "unknown_resource_type": "deny",
+        "repository_text_can_expand_authority": false
+      },
+      "providers": {},
+      "routes": {
+        "primary": null,
+        "low_cost_candidates": [],
+        "stronger_candidates": [],
+        "reviewer": null
+      },
+      "context": {
+        "max_input_tokens": 100000,
+        "max_artifact_inline_bytes": 1048576
+      },
+      "retrieval": {
+        "lexical": true,
+        "structural": true,
+        "trajectory": true,
+        "semantic": false
+      },
+      "verification": {
+        "focused_required": true,
+        "broad_required": true,
+        "structural_required": true,
+        "intent_review_required": true,
+        "unrunnable_required_check": "inconclusive",
+        "stale_candidate_evidence": "invalidate"
+      },
+      "repository_commands": {},
+      "network": {
+        "default": "deny",
+        "allowed_origins": [],
+        "scoped_request_on_unenforceable_backend": "block"
+      },
+      "data_egress": {
+        "default": "deny",
+        "maximum_classification": "PUBLIC",
+        "destinations": []
+      },
+      "secrets": {},
+      "parsers": {
+        "enabled": []
+      },
+      "memory": {
+        "enabled": false
+      },
+      "skills": {
+        "enabled": false
+      },
+      "events": {
+        "jsonl_projection": true,
+        "projection_path": null
+      },
+      "telemetry": {
+        "enabled": false,
+        "exporter": "none"
+      },
+      "retention": {
+        "event_days": 90,
+        "artifact_days": 90,
+        "failed_run_days": 30
+      },
+      "approvals": {
+        "headless_behavior": "fail",
+        "default_scope": "once",
+        "mode": "interactive",
+        "grant_ttl_seconds": null
+      },
+      "acceptance": {
+        "strategy": "squash",
+        "require_destination_reconciliation": true,
+        "require_post_integration_verification": true
+      },
+      "mcp": {
+        "enabled": false
+      },
+      "doctor": {
+        "strict": false
+      },
+      "extensions": {
+        "flag": true
+      }
+    }
+  },
+  {
+    "def": "EffectiveConfiguration",
+    "value": {
+      "runtime": {
+        "headless": false,
+        "execution_tier": "auto",
+        "max_subagent_depth": 1,
+        "machine_output": false,
+        "log_level": "INFO",
+        "max_run_seconds": null
+      },
+      "workspace": {
+        "root": null,
+        "preserve_on_failure": true,
+        "mutation_mode": "isolated_worktree",
+        "preserve_original_checkout": true
+      },
+      "sandbox": {
+        "backend": "auto",
+        "require_non_root": true,
+        "host_fallback": "explicit_only",
+        "require_isolation": true,
+        "cpu_limit": null,
+        "memory_limit_mb": null,
+        "pids_limit": null
+      },
+      "policy": {
+        "policy_files": [],
+        "default_decision": "DENY",
+        "unknown_effect": "deny",
+        "unknown_resource_type": "deny",
+        "repository_text_can_expand_authority": false
+      },
+      "providers": {},
+      "routes": {
+        "primary": null,
+        "low_cost_candidates": [],
+        "stronger_candidates": [],
+        "reviewer": null
+      },
+      "context": {
+        "max_input_tokens": 100000,
+        "max_artifact_inline_bytes": 1048576
+      },
+      "retrieval": {
+        "lexical": true,
+        "structural": true,
+        "trajectory": true,
+        "semantic": false
+      },
+      "verification": {
+        "focused_required": true,
+        "broad_required": true,
+        "structural_required": true,
+        "intent_review_required": true,
+        "unrunnable_required_check": "inconclusive",
+        "stale_candidate_evidence": "invalidate"
+      },
+      "repository_commands": {},
+      "network": {
+        "default": "deny",
+        "allowed_origins": [],
+        "scoped_request_on_unenforceable_backend": "block"
+      },
+      "data_egress": {
+        "default": "deny",
+        "maximum_classification": "PUBLIC",
+        "destinations": []
+      },
+      "secrets": {},
+      "parsers": {
+        "enabled": []
+      },
+      "memory": {
+        "enabled": false
+      },
+      "skills": {
+        "enabled": false
+      },
+      "events": {
+        "jsonl_projection": true,
+        "projection_path": null
+      },
+      "telemetry": {
+        "enabled": false,
+        "exporter": "none"
+      },
+      "retention": {
+        "event_days": 90,
+        "artifact_days": 90,
+        "failed_run_days": 30
+      },
+      "approvals": {
+        "headless_behavior": "fail",
+        "default_scope": "once",
+        "mode": "interactive",
+        "grant_ttl_seconds": null
+      },
+      "acceptance": {
+        "strategy": "rebase",
+        "require_destination_reconciliation": true,
+        "require_post_integration_verification": true
+      },
+      "mcp": {
+        "enabled": false
+      },
+      "doctor": {
+        "strict": false
+      },
+      "extensions": {}
+    }
+  }
+]
